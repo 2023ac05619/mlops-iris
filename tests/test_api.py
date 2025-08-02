@@ -130,7 +130,7 @@ def test_add_training_data_invalid_target(client):
 
 
 def test_metrics_endpoint(client):
-    response = client.get('/metrics')
+    response = client.get('/system_metrics')
     assert response.status_code == 200
     
     data = json.loads(response.data)
@@ -184,7 +184,7 @@ def test_dashboard_endpoint(client):
 
 
 def test_prometheus_metrics_endpoint(client):
-    response = client.get('/prometheus_metrics')
+    response = client.get('/metrics')
     assert response.status_code == 200
     assert response.headers['Content-Type'] == 'text/plain; version=0.0.4; charset=utf-8'
 
@@ -201,7 +201,7 @@ def test_integration_workflow(client):
     assert train_response.status_code == 200
     
     # 3. Check metrics updated
-    metrics_response = client.get('/metrics')
+    metrics_response = client.get('/system_metrics')
     assert metrics_response.status_code == 200
     metrics_data = json.loads(metrics_response.data)
     assert metrics_data['total_predictions'] >= 1

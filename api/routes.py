@@ -24,8 +24,8 @@ def register_routes(app):
                 "/predict": "POST: Make a prediction",
                 "/add_training_data": "POST: Add new labeled data",
                 "/trigger_retrain": "POST: Manually trigger retraining",
-                "/metrics": "GET: System and model metrics",
-                "/prometheus_metrics": "GET: Prometheus metrics",
+                "/system_metrics": "GET: System and model metrics",
+                "/metrics": "GET: Prometheus metrics (auto-generated)",
                 "/dashboard": "GET: Monitoring dashboard",
                 "/predictions/history": "GET: Recent predictions",
                 "/health": "GET: Health check"
@@ -107,9 +107,9 @@ def register_routes(app):
         except Exception as e:
             return jsonify({"error": str(e)}), 500
     
-    @app.route('/metrics', methods=['GET'])
+    @app.route('/system_metrics', methods=['GET'])
     def metrics():
-        REQUEST_COUNT.labels(method='GET', endpoint='/metrics').inc()
+        REQUEST_COUNT.labels(method='GET', endpoint='/system_metrics').inc()
         
         try:
             _, _, monitoring = get_services()
@@ -117,10 +117,6 @@ def register_routes(app):
             return jsonify(metrics_data)
         except Exception as e:
             return jsonify({"error": str(e)}), 500
-    
-    @app.route('/prometheus_metrics', methods=['GET'])
-    def prometheus_metrics():
-        return MonitoringService.get_prometheus_metrics()
     
     @app.route('/predictions/history', methods=['GET'])
     def predictions_history():
@@ -171,7 +167,7 @@ def register_routes(app):
             <script>
                 async function updateMetrics() {
                     try {
-                        const response = await fetch('/metrics');
+                        const response = await fetch('/system_metrics');
                         const data = await response.json();
                         
                         document.getElementById('timestamp').textContent = new Date().toLocaleString();
