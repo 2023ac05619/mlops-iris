@@ -3,11 +3,8 @@ import numpy as np
 from sklearn.datasets import load_iris
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-from pathlib import Path
+from config import DATA_DIR
 
-from pathlib import Path
-ROOT_DIR = Path(__file__).parent
-DATA_DIR = ROOT_DIR / "data"
 
 class DataPipeline:
     

@@ -14,7 +14,8 @@ from api import create_app
 from config import MLRUNS_DIR
 
 
-class MLOpsPipeline:    
+class MLOpsPipeline:
+    
     def __init__(self):
         self.data_pipeline = DataPipeline()
         self.model_pipeline = ModelPipeline()

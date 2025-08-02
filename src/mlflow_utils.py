@@ -6,13 +6,11 @@ from config import METADATA_FILE, EXPERIMENT_NAME
 
 
 class MLflowManager:
-    """Centralized MLflow operations manager."""
     
     def __init__(self):
         self.client = MlflowClient()
         
     def demonstrate_tracking(self):
-        """Demonstrate MLflow tracking capabilities."""
         print("\n--- MLflow Tracking Demonstration ---")
         
         try:
@@ -59,7 +57,6 @@ class MLflowManager:
         print("-------------------------------------\n")
         
     def show_detailed_run_info(self):
-        """Show detailed information for the best run."""
         print("\n--- Detailed Info for Best Run ---")
         
         try:
@@ -93,7 +90,6 @@ class MLflowManager:
         print("----------------------------------\n")
         
     def get_experiment_summary(self) -> dict:
-        """Get experiment summary for API endpoints."""
         try:
             exp = self.client.get_experiment_by_name(EXPERIMENT_NAME)
             if not exp:

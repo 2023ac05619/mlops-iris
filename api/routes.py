@@ -161,7 +161,7 @@ def register_routes(app):
             </style>
         </head>
         <body>
-            <h1> ML Model Monitoring Dashboard</h1>
+            <h1>🤖 ML Model Monitoring Dashboard</h1>
             <div class="status">
                 <div class="healthy">● System Healthy</div>
                 <div>Last Updated: <span id="timestamp"></span></div>
