@@ -10,7 +10,6 @@ from config import MODELS_DIR, METADATA_FILE, SCALER_FILE, EXPERIMENT_NAME, MODE
 
 
 class ModelPipeline:
-    """Handles model training, evaluation, and artifact saving."""
     
     def __init__(self):
         self.models = {
@@ -19,7 +18,6 @@ class ModelPipeline:
         }
         
     def train_single_model(self, model_name, model_class, params, X_train, y_train, X_test, y_test):
-        """Train a single model with MLflow tracking."""
         with mlflow.start_run(run_name=model_name) as run:
             # Log parameters
             mlflow.log_params(params)
@@ -41,7 +39,6 @@ class ModelPipeline:
             return model, accuracy, run.info.run_id
             
     def train_and_evaluate(self, data):
-        """Train all models and select the best one."""
         X_train, X_test = data['X_train'], data['X_test']
         y_train, y_test = data['y_train'], data['y_test']
         scaler = data['scaler']
@@ -81,7 +78,6 @@ class ModelPipeline:
         
     def _save_model_artifacts(self, best_model_name, best_model_info, scaler, 
                             feature_names, target_names, all_results):
-        """Save model artifacts and metadata."""
         # Save best model
         best_model = best_model_info['model']
         model_path = MODELS_DIR / f"{best_model_name.lower()}_model.pkl"

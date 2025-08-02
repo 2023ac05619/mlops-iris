@@ -10,7 +10,6 @@ ROOT_DIR = Path(__file__).parent
 DATA_DIR = ROOT_DIR / "data"
 
 class DataPipeline:
-    """Handles all data loading and preprocessing operations."""
     
     def __init__(self):
         self.scaler = StandardScaler()
@@ -18,14 +17,12 @@ class DataPipeline:
         self.target_names = None
         
     def load_iris_dataset(self):
-        """Load the Iris dataset."""
         iris = load_iris()
         self.feature_names = iris.feature_names
         self.target_names = list(iris.target_names)
         return iris.data, iris.target
         
     def save_raw_data(self, X, y):
-        """Save raw data to CSV for reference."""
         df = pd.DataFrame(X, columns=self.feature_names)
         df['target'] = y
         df['target_name'] = [self.target_names[i] for i in y]
@@ -33,7 +30,6 @@ class DataPipeline:
         print(f"[INFO] Raw data saved to {DATA_DIR / 'iris_full.csv'}")
         
     def split_and_scale_data(self, X, y):
-        """Split data into train/test and apply scaling."""
         X_train, X_test, y_train, y_test = train_test_split(
             X, y, test_size=0.2, random_state=42, stratify=y
         )
@@ -44,7 +40,6 @@ class DataPipeline:
         return X_train_scaled, X_test_scaled, y_train, y_test
         
     def load_and_preprocess(self):
-        """Complete data pipeline."""
         print("[INFO] Loading Iris dataset...")
         X, y = self.load_iris_dataset()
         

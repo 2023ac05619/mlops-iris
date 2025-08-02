@@ -2,23 +2,15 @@ import sqlite3
 import json
 from datetime import datetime
 from typing import List, Dict, Any
-from pathlib import Path
+from config import DB_PATH
 
-# Directory Structure
-ROOT_DIR = Path(__file__).parent
-LOGS_DIR = ROOT_DIR / "logs"
-DATA_DIR = ROOT_DIR / "data"
-# File Paths
-DB_PATH = LOGS_DIR / "predictions.db"
 
 class DatabaseManager:
-    """Centralized database operations manager."""
     
     def __init__(self):
         self.db_path = DB_PATH
         
     def init_db(self):
-        """Initialize database and create tables."""
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
             
@@ -49,8 +41,7 @@ class DatabaseManager:
         print(f"[INFO] Database initialized at {self.db_path}")
         
     def log_prediction(self, timestamp: str, input_data: list, 
-        prediction: str, confidence: float, latency: float):
-        """Log prediction to database."""
+                      prediction: str, confidence: float, latency: float):
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
             cursor.execute('''
@@ -60,7 +51,6 @@ class DatabaseManager:
             conn.commit()
             
     def store_new_data(self, timestamp: str, features: list, target: int):
-        """Store new training data."""
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
             cursor.execute('''
@@ -70,7 +60,6 @@ class DatabaseManager:
             conn.commit()
             
     def count_new_samples(self) -> int:
-        """Count unused training samples."""
         try:
             with sqlite3.connect(self.db_path) as conn:
                 cursor = conn.cursor()
@@ -84,7 +73,6 @@ class DatabaseManager:
             return 0
             
     def mark_data_as_used(self):
-        """Mark training data as used."""
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
             cursor.execute('''
@@ -95,7 +83,6 @@ class DatabaseManager:
             conn.commit()
             
     def get_stats(self) -> Dict[str, Any]:
-        """Get database statistics."""
         stats = {
             'total_predictions': 0,
             'average_db_latency': 0.0,
@@ -105,7 +92,7 @@ class DatabaseManager:
         try:
             with sqlite3.connect(self.db_path) as conn:
                 cursor = conn.cursor()
-            
+                
                 # Basic stats
                 cursor.execute('SELECT COUNT(*), AVG(latency) FROM predictions')
                 total, avg_latency = cursor.fetchone()
@@ -122,7 +109,6 @@ class DatabaseManager:
         return stats
         
     def get_prediction_history(self, limit: int = 10) -> List[Dict[str, Any]]:
-        """Get recent prediction history."""
         history = []
         try:
             with sqlite3.connect(self.db_path) as conn:
