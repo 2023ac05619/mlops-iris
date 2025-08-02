@@ -41,7 +41,7 @@ class DatabaseManager:
         print(f"[INFO] Database initialized at {self.db_path}")
         
     def log_prediction(self, timestamp: str, input_data: list, 
-                      prediction: str, confidence: float, latency: float):
+        prediction: str, confidence: float, latency: float):
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
             cursor.execute('''
