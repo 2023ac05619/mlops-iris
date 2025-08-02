@@ -1,7 +1,7 @@
 {
     "best_model": "LogisticRegression",
     "best_accuracy": 0.9333333333333333,
-    "best_run_id": "3b68af6fa791423c8e3e81aabec3095c",
+    "best_run_id": "22e20c93c9554732851db6f14c0e4a34",
     "feature_names": [
         "sepal length (cm)",
         "sepal width (cm)",
@@ -17,7 +17,7 @@
         "LogisticRegression",
         "RandomForest"
     ],
-    "training_timestamp": "2025-08-02T21:34:32.223241",
-    "model_path": "/home/ubuntu/imran/mlops-iris/models/logisticregression_model.pkl",
-    "scaler_path": "/home/ubuntu/imran/mlops-iris/models/scaler.pkl"
+    "training_timestamp": "2025-08-02T18:58:01.525312",
+    "model_path": "/app/models/logisticregression_model.pkl",
+    "scaler_path": "/app/models/scaler.pkl"
 }

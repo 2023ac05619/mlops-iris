@@ -1,0 +1,14 @@
+artifact_uri: file:///home/ubuntu/imran/mlops-iris/mlruns/251412096572684526/ba90c01f082c4893a75fc2c66fcc3be7/artifacts
+end_time: 1754160085238
+entry_point_name: ''
+experiment_id: '251412096572684526'
+lifecycle_stage: active
+run_id: ba90c01f082c4893a75fc2c66fcc3be7
+run_name: LogisticRegression
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1754160084082
+status: 3
+tags: []
+user_id: ubuntu

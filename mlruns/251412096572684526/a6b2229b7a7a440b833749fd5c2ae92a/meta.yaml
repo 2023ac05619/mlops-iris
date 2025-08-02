@@ -1,0 +1,14 @@
+artifact_uri: file:///home/ubuntu/imran/mlops-iris/mlruns/251412096572684526/a6b2229b7a7a440b833749fd5c2ae92a/artifacts
+end_time: 1754160074201
+entry_point_name: ''
+experiment_id: '251412096572684526'
+lifecycle_stage: active
+run_id: a6b2229b7a7a440b833749fd5c2ae92a
+run_name: RandomForest
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1754160072953
+status: 3
+tags: []
+user_id: ubuntu

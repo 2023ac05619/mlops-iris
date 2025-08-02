@@ -1,0 +1,22 @@
+artifact_path: file:///home/ubuntu/imran/mlops-iris/mlruns/251412096572684526/models/m-338c76104470435eafd1bcf1776de99e/artifacts
+flavors:
+  python_function:
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.sklearn
+    model_path: model.pkl
+    predict_fn: predict
+    python_version: 3.10.18
+  sklearn:
+    code: null
+    pickled_model: model.pkl
+    serialization_format: cloudpickle
+    sklearn_version: 1.7.1
+mlflow_version: 3.1.4
+model_id: m-338c76104470435eafd1bcf1776de99e
+model_size_bytes: 153553
+model_uuid: m-338c76104470435eafd1bcf1776de99e
+prompts: null
+run_id: d1d8c3a4095e4e18918201bca920751d
+utc_time_created: '2025-08-02 18:41:32.549391'

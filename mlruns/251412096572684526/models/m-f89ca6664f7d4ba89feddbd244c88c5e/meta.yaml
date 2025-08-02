@@ -1,0 +1,10 @@
+artifact_location: file:///home/ubuntu/imran/mlops-iris/mlruns/251412096572684526/models/m-f89ca6664f7d4ba89feddbd244c88c5e/artifacts
+creation_timestamp: 1754160600211
+experiment_id: '251412096572684526'
+last_updated_timestamp: 1754160601805
+model_id: m-f89ca6664f7d4ba89feddbd244c88c5e
+model_type: null
+name: model
+source_run_id: f825760b59334bf9957bd1548ec0f0ae
+status: 2
+status_message: null
