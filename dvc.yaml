@@ -1,0 +1,85 @@
+stages:
+  data_loading:
+    cmd: |
+      python -c "
+      from src.data_pipeline import DataPipeline
+      pipeline = DataPipeline()
+      data = pipeline.load_iris_dataset()
+      print('Data loading stage completed')
+      "
+    deps:
+      - src/data_pipeline.py
+      - config.py
+    outs:
+      - data/iris_full.csv
+
+  data_preprocessing:
+    cmd: |
+      python -c "
+      from src.data_pipeline import DataPipeline
+      pipeline = DataPipeline()
+      data = pipeline.load_and_preprocess()
+      print('Data preprocessing stage completed')
+      "
+    deps:
+      - src/data_pipeline.py
+      - data/iris_full.csv
+    outs:
+      - models/scaler.pkl
+    metrics:
+      - metrics/data_metrics.json
+
+  model_training:
+    cmd: |
+      python -c "
+      import os
+      from pathlib import Path
+      from src.data_pipeline import DataPipeline
+      from src.model_pipeline import ModelPipeline
+      
+      # Set MLflow tracking
+      mlruns_dir = Path('mlruns').resolve()
+      mlruns_dir.mkdir(exist_ok=True)
+      os.environ['MLFLOW_TRACKING_URI'] = f'file://{mlruns_dir}'
+      
+      # Training pipeline
+      data_pipeline = DataPipeline()
+      model_pipeline = ModelPipeline()
+      
+      data = data_pipeline.load_and_preprocess()
+      best_model = model_pipeline.train_and_evaluate(data)
+      print('Model training stage completed')
+      "
+    deps:
+      - src/model_pipeline.py
+      - src/data_pipeline.py
+      - models/scaler.pkl
+      - config.py
+    outs:
+      - models/logisticregression_model.pkl
+      - models/randomforest_model.pkl
+      - models/metadata.json
+    metrics:
+      - metrics/model_metrics.json
+    plots:
+      - plots/model_comparison.json
+
+  model_evaluation:
+    cmd: |
+      python -c "
+      from src.model_evaluation import ModelEvaluator
+      evaluator = ModelEvaluator()
+      evaluator.generate_evaluation_report()
+      print('Model evaluation stage completed')
+      "
+    deps:
+      - src/model_evaluation.py
+      - models/logisticregression_model.pkl
+      - models/randomforest_model.pkl
+      - models/metadata.json
+    metrics:
+      - metrics/evaluation_metrics.json
+    plots:
+      - plots/confusion_matrix.png
+      - plots/feature_importance.png
+      - plots/roc_curves.png

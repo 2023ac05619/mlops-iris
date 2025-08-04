@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  mlops-app:
+    build:
+      target: development
+    volumes:
+      - .:/app
+      - /app/__pycache__
+    environment:
+      - ENVIRONMENT=development
+      - LOG_LEVEL=DEBUG
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+  # Development database (PostgreSQL)
+  postgres:
+    image: postgres:15-alpine
+    container_name: mlops-postgres-dev
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=mlops_dev
+      - POSTGRES_USER=mlops
+      - POSTGRES_PASSWORD=dev_password
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    networks:
+      - mlops-network
+
+volumes:
+  postgres_dev_data:
+    driver: local
