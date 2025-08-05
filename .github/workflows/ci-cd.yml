@@ -1,4 +1,4 @@
-name: MLOps CI/CD Pipeline iris Classifier
+name: MLOps CI/CD Pipeline
 
 on:
   push:
@@ -32,7 +32,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
       - name: Load .env file
-        uses: spicyca/load-dotenv-action@v1
+        uses: motdotla/dotenv-action@v2
         with:
           path: ./.env
       - name: Set up Python and DVC
@@ -73,7 +73,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
       - name: Load .env file
-        uses: spicyca/load-dotenv-action@v1
+        uses: motdotla/dotenv-action@v2
         with:
           path: ./.env
       - name: Log in to Docker Hub
@@ -95,7 +95,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
       - name: Load .env file
-        uses: spicyca/load-dotenv-action@v1
+        uses: motdotla/dotenv-action@v2
         with:
           path: ./.env
       - name: Deploy to remote server
