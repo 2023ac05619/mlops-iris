@@ -32,9 +32,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
       - name: Load .env file
-        uses: motdotla/dotenv-action@v2
-        with:
-          path: ./.env
+        run: export $(grep -v '^#' .env | xargs) >> $GITHUB_ENV
       - name: Set up Python and DVC
         uses: iterative/setup-dvc@v1
         with:
@@ -73,9 +71,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
       - name: Load .env file
-        uses: motdotla/dotenv-action@v2
-        with:
-          path: ./.env
+        run: export $(grep -v '^#' .env | xargs) >> $GITHUB_ENV
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
         with:
@@ -95,9 +91,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
       - name: Load .env file
-        uses: motdotla/dotenv-action@v2
-        with:
-          path: ./.env
+        run: export $(grep -v '^#' .env | xargs) >> $GITHUB_ENV
       - name: Deploy to remote server
         uses: appleboy/ssh-action@master
         with:
