@@ -1,0 +1,8 @@
+[core]
+    remote = origin
+    analytics = false
+    check_update = false
+
+['remote "origin"']
+    url = https://github.com/2023ac05619/mlops-iris-classifier.git
+    auth = github

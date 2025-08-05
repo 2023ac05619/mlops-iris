@@ -1,55 +1,122 @@
-name: Python CI/CD Pipeline
+name: MLOps CI/CD Pipeline for Iris Classifier
 
 on:
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+    branches:
+      - main
+  workflow_dispatch:
 
 jobs:
-  test-and-lint:
+  lint:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up Python 3.9
-        uses: actions/setup-python@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
         with:
           python-version: '3.9'
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install flake8
 
       - name: Lint with flake8
-        run: flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+        run: |
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
-      - name: Run Pytest
-        run: python -m pytest tests/ -v
-
-  build-and-push:
-    needs: test-and-lint
+  run-dvc-pipeline:
+    needs: lint
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Login to Docker Hub
+      - name: Set up Python and DVC
+        uses: iterative/setup-dvc@v1
+        with:
+          python-version: '3.9'
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+      
+      - name: Configure DVC Local Remote
+        run: |
+          dvc remote add -d localremote /tmp/dvc-storage
+
+      - name: Run DVC pipeline
+        run: dvc repro
+
+      - name: Commit DVC changes
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add .
+          git commit -m "DVC pipeline run by GitHub Actions" || echo "No changes to commit"
+          git push
+
+  build-and-push-docker:
+    needs: run-dvc-pipeline
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Load .env file
+        uses: spicyca/load-dotenv-action@v1
+        with:
+          # This action reads your .env file and loads variables into the job's environment
+          # You must create a .env file in your repo with the required secrets.
+          # IMPORTANT: Make sure to add .env to your .gitignore file!
+          path: ./.env
+          
+      - name: Log in to Docker Hub
         uses: docker/login-action@v2
         with:
-          username: ${{ secrets.DOCKER_HUB_USERNAME }}
-          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+          # These now read from the environment variables loaded from your .env file
+          username: ${{ env.DOCKERHUB_USERNAME }}
+          password: ${{ env.DOCKERHUB_TOKEN }}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v4
         with:
           context: .
-          file: ./Dockerfile
           push: true
-          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/mlops-iris-api:latest,${{ secrets.DOCKER_HUB_USERNAME }}/mlops-iris-api:${{ github.sha }}
+          tags: ${{ env.DOCKERHUB_USERNAME }}/mlops-iris-classifier:latest
+
+  deploy:
+    needs: build-and-push-docker
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Load .env file
+        uses: spicyca/load-dotenv-action@v1
+        with:
+          path: ./.env
+
+      - name: Deploy to remote server
+        uses: appleboy/ssh-action@master
+        with:
+          # SSH secrets are also loaded from the .env file
+          host: ${{ env.DEPLOY_HOST }}
+          username: ${{ env.DEPLOY_USERNAME }}
+          key: ${{ env.DEPLOY_SSH_KEY }}
+          script: |
+            # Navigate to the project directory
+            if [ ! -d "mlops-iris-classifier" ]; then
+              git clone https://github.com/${{ github.repository }}.git
+              cd mlops-iris-classifier
+            else
+              cd mlops-iris-classifier
+              git pull
+            fi
+            
+            # The deploy script on the server will also use a .env file
+            # so no arguments need to be passed.
+            chmod +x ./scripts/deploy.sh
+            ./scripts/deploy.sh

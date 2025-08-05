@@ -1,13 +1,19 @@
 FROM python:3.10-slim
 
+# Set the working directory in the container
 WORKDIR /app
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Copy the requirements file into the container at /app
+COPY ./requirements.txt /app/requirements.txt
 
-COPY . .
+# Install any needed packages specified in requirements.txt
+RUN pip install --no-cache-dir --upgrade -r requirements.txt
 
-EXPOSE 5001
+# Copy the rest of the application's code into the container
+COPY ./app /app/app
+COPY ./config /app/config
+COPY ./models /app/models
+COPY ./data /app/data
 
-CMD ["python", "main.py"]
-
+# Command to run the application
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
