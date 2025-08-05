@@ -77,7 +77,8 @@ data/processed/
 *.pid
 
 # DVC
-/data/raw/iris.csv
+.dvc/cache
+/data/iris.csv
 /data/processed/train.csv
 /data/processed/test.csv
 /models/scaler.pkl
@@ -88,7 +89,4 @@ data/processed/
 # Docker
 .dockerignore
 
-# Secrets
-.env.local
-.env.production
-secrets/
+.token
