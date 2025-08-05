@@ -39,3 +39,4 @@ venv/
 logs/
 mlruns/
 *.log
+minio_data/

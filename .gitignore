@@ -88,5 +88,8 @@ data/processed/
 
 # Docker
 .dockerignore
-
 .token
+
+# Stores
+minio/
+minio_data/
