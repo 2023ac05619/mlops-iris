@@ -4,23 +4,21 @@
 set -e
 
 # --- Load Environment Variables ---
-# Assumes the .env file is in the project's root directory (one level up from this script)
 ENV_FILE="$(dirname "$0")/../.env"
 
 if [ -f "$ENV_FILE" ]; then
     echo "Loading environment variables from .env file..."
     export $(cat "$ENV_FILE" | sed 's/#.*//g' | xargs)
 else
-    echo "Error: .env file not found in the project root ($ENV_FILE). Aborting."
+    echo "Error: .env file not found. Aborting."
     exit 1
 fi
 
-# --- Variables (Loaded from .env) ---
+# --- Variables ---
 IMAGE_NAME="mlops-iris-classifier"
 CONTAINER_NAME="iris-app"
-MLFLOW_UI_PORT=${MLFLOW_UI_PORT:-5000} # Use default if not set
-APP_PORT=${APP_PORT:-8000} # Use default if not set
-DVC_REMOTE_DIR="/var/dvc-storage"
+MLFLOW_UI_PORT=${MLFLOW_UI_PORT:-5000}
+APP_PORT=${APP_PORT:-8000}
 
 # Check for required variables
 if [ -z "$DOCKERHUB_USERNAME" ]; then
@@ -28,23 +26,20 @@ if [ -z "$DOCKERHUB_USERNAME" ]; then
     exit 1
 fi
 
-echo "--- Starting Deployment for user: $DOCKERHUB_USERNAME ---"
+echo "--- Starting App Deployment ---"
 
-# --- Setup DVC if not already initialized ---
+# --- Setup DVC for MinIO ---
+pip3 install --quiet "dvc[s3]"
 if [ ! -d ".dvc" ]; then
-    echo "DVC not initialized. Setting up DVC..."
-    pip3 install --quiet dvc # Ensure dvc is installed
     dvc init --no-scm
-    
-    echo "Creating DVC local remote storage at $DVC_REMOTE_DIR"
-    mkdir -p $DVC_REMOTE_DIR
-    dvc remote add -d localremote $DVC_REMOTE_DIR
-else
-    echo "DVC already initialized."
 fi
+dvc remote add --force origin s3://$DVC_REMOTE_BUCKET
+dvc remote modify origin endpointurl $MINIO_ENDPOINT_URL
+dvc remote modify origin access_key_id $MINIO_ACCESS_KEY
+dvc remote modify origin secret_access_key $MINIO_SECRET_KEY
 
 # --- Pull DVC data ---
-echo "Pulling data from DVC remote..."
+echo "Pulling data from MinIO DVC remote..."
 dvc pull -f
 
 # --- Pull latest Docker image ---
@@ -52,7 +47,7 @@ echo "1. Pulling latest Docker image: $DOCKERHUB_USERNAME/$IMAGE_NAME:latest"
 docker pull $DOCKERHUB_USERNAME/$IMAGE_NAME:latest
 
 # --- Stop and remove existing containers ---
-echo "2. Stopping and removing existing containers..."
+echo "2. Stopping and removing existing app containers..."
 docker stop $CONTAINER_NAME || true
 docker rm $CONTAINER_NAME || true
 docker stop mlflow-ui || true
@@ -60,8 +55,10 @@ docker rm mlflow-ui || true
 
 # --- Run the new application container ---
 echo "3. Running new application container"
+# Connect the app to the same network as the infrastructure
 docker run -d \
     --name $CONTAINER_NAME \
+    --network mlops-net \
     -p $APP_PORT:$APP_PORT \
     --env-file $ENV_FILE \
     -v $(pwd)/mlruns:/app/mlruns \
@@ -77,7 +74,4 @@ docker run -d --name mlflow-ui \
     ghcr.io/mlflow/mlflow:v2.3.2 \
     mlflow ui --host 0.0.0.0 --port $MLFLOW_UI_PORT --backend-store-uri /mlruns
 
-echo "--- Deployment Finished Successfully ---"
-echo "Application is running on port $APP_PORT"
-echo "MLflow UI is running on port $MLFLOW_UI_PORT"
-
+echo "--- App Deployment Finished ---"
