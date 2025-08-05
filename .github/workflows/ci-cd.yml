@@ -1,4 +1,4 @@
-name: MLOps CI/CD Pipeline
+name: MLOps CI/CD Pipeline iris Classifier
 
 on:
   push:
@@ -31,8 +31,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-      - name: Load .env file
-        run: export $(grep -v '^#' .env | xargs) >> $GITHUB_ENV
       - name: Set up Python and DVC
         uses: iterative/setup-dvc@v1
         with:
@@ -41,10 +39,10 @@ jobs:
         run: pip install -r requirements.txt dvc[s3]
       - name: Configure DVC for MinIO
         env:
-          MINIO_ENDPOINT_URL: ${{ env.MINIO_ENDPOINT_URL }}
-          DVC_REMOTE_BUCKET: ${{ env.DVC_REMOTE_BUCKET }}
-          MINIO_ACCESS_KEY: ${{ env.MINIO_ACCESS_KEY }}
-          MINIO_SECRET_KEY: ${{ env.MINIO_SECRET_KEY }}
+          MINIO_ENDPOINT_URL: ${{ secrets.MINIO_ENDPOINT_URL }}
+          DVC_REMOTE_BUCKET: ${{ secrets.DVC_REMOTE_BUCKET }}
+          MINIO_ACCESS_KEY: ${{ secrets.MINIO_ACCESS_KEY }}
+          MINIO_SECRET_KEY: ${{ secrets.MINIO_SECRET_KEY }}
         run: |
           dvc remote add -d origin s3://$DVC_REMOTE_BUCKET
           dvc remote modify origin endpointurl $MINIO_ENDPOINT_URL
@@ -70,19 +68,17 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-      - name: Load .env file
-        run: export $(grep -v '^#' .env | xargs) >> $GITHUB_ENV
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
         with:
-          username: ${{ env.DOCKERHUB_USERNAME }}
-          password: ${{ env.DOCKERHUB_TOKEN }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Build and push Docker image
         uses: docker/build-push-action@v4
         with:
           context: .
           push: true
-          tags: ${{ env.DOCKERHUB_USERNAME }}/mlops-iris-classifier:latest
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/mlops-iris-classifier:latest
 
   deploy:
     needs: build-and-push-docker
@@ -90,14 +86,12 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-      - name: Load .env file
-        run: export $(grep -v '^#' .env | xargs) >> $GITHUB_ENV
       - name: Deploy to remote server
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ env.DEPLOY_HOST }}
-          username: ${{ env.DEPLOY_USERNAME }}
-          key: ${{ env.DEPLOY_SSH_KEY }}
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USERNAME }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
           script: |
             if [ ! -d "mlops-iris-classifier" ]; then
               git clone https://github.com/${{ github.repository }}.git
