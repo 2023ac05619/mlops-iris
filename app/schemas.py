@@ -7,7 +7,7 @@ class PredictionInput(BaseModel):
     model_name: Optional[str] = Field(None, example="RandomForest")
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "features": [5.9, 3.0, 5.1, 1.8],
                 "model_name": "RandomForest"
@@ -28,7 +28,7 @@ class NewDataInput(BaseModel):
     target: int = Field(..., example=0)
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "features": [4.9, 3.0, 1.4, 0.2],
                 "target": 0

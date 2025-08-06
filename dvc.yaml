@@ -1,33 +1,17 @@
 stages:
   load_data:
-    cmd: python scripts/data_pipeline.py load
+    cmd: python src/data_pipeline.py load
     deps:
-      - scripts/data_pipeline.py
+    - src/data_pipeline.py
     outs:
-      - data/iris.csv
+    - data/iris.csv
 
   split_data:
-    cmd: python scripts/data_pipeline.py split
+    cmd: python src/data_pipeline.py split
     deps:
-      - data/iris.csv
-      - scripts/data_pipeline.py
+    - data/iris.csv
+    - src/data_pipeline.py
     outs:
-      - data/train.csv
-      - data/test.csv
+    - data/train.csv
+    - data/test.csv
 
-  train:
-    cmd: python scripts/model_pipeline.py
-    deps:
-      - data/train.csv
-      - data/test.csv
-      - scripts/model_pipeline.py
-    params:
-      - config.py:
-    outs:
-      - models/scaler.pkl
-      - models/metadata.json
-      - models/LogisticRegression.pkl
-      - models/RandomForest.pkl
-    metrics:
-      - models/metadata.json:
-          cache: false

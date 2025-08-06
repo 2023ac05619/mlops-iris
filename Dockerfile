@@ -7,13 +7,17 @@ WORKDIR /app
 COPY ./requirements.txt /app/requirements.txt
 
 # Install any needed packages specified in requirements.txt
+RUN pip install --upgrade pip   
 RUN pip install --no-cache-dir --upgrade -r requirements.txt
 
 # Copy the rest of the application's code into the container
+COPY ./main.py /app/main.py
 COPY ./app /app/app
+COPY ./src /app/src
 COPY ./config /app/config
 COPY ./models /app/models
 COPY ./data /app/data
 
+
 # Command to run the application
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
