@@ -1,12 +1,35 @@
 version: '3.8'
 
 services:
+  gitlab:
+    image: gitlab/gitlab-ee:16.7.0-ee.0 # Using a specific version for stability
+    container_name: gitlab
+    hostname: 'gitlab.example.com'
+    restart: always
+    environment:
+      GITLAB_OMNIBUS_CONFIG: |
+        external_url 'http://gitlab.example.com:80'
+        gitlab_rails['gitlab_shell_ssh_port'] = 2424
+    ports:
+      - "80:80"
+      - "443:443"
+      - "2424:22"
+    volumes:
+      - ./gitlab/config:/etc/gitlab
+      - ./gitlab/logs:/var/log/gitlab
+      - ./gitlab/data:/var/opt/gitlab
+    environment:
+      GITLAB_OMNIBUS_CONFIG: "external_url 'http://localhost'" # Changed to localhost for easy access
+    shm_size: '256m'
+    networks:
+      - mlops-net
+
   minio:
     image: minio/minio:RELEASE.2024-10-02T17-50-41Z
     container_name: minio
     ports:
-      - "${MINIO_API_PORT:-9000}:9000"   # For API access
-      - "${MINIO_UI_PORT:-9001}:9001"    # For the web UI
+      - "${MINIO_API_PORT:-9000}:9000"  # For API access
+      - "${MINIO_UI_PORT:-9001}:9001"  # For the web UI
     volumes:
       - ./minio_data:/data
     environment:

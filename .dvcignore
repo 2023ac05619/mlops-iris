@@ -40,3 +40,4 @@ logs/
 mlruns/
 *.log
 minio_data/
+gitlab/

@@ -35,7 +35,7 @@ run-dvc-pipeline:
     - git config --global http.sslVerify false
     - git add .
     - git commit -m "DVC pipeline run by GitLab CI [ci skip]" || echo "No changes to commit"
-    - git push "https://${CI_USER}:${CI_TOKEN}@adslgit.yawal.io/${CI_USER}/mlops-iris.git" HEAD:main
+    - git push "https://${CI_USER}:${CI_TOKEN}@192.168.18.2/${CI_USER}/mlops-iris.git" HEAD:main
   only:
     - main
 
@@ -84,7 +84,7 @@ deploy:
     # Connect & deploy
     - ssh -v -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i id_rsa ubuntu@192.168.18.2 "
         if [ ! -d 'mlops-iris-classifier' ]; then
-          git clone https://adslgit.yawal.io/${CI_USER}/mlops-iris.git.git
+          git clone https://192.168.18.2/${CI_USER}/mlops-iris.git.git
           cd mlops-iris-classifier
         else
           cd mlops-iris-classifier

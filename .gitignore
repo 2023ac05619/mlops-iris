@@ -87,3 +87,6 @@ data/iris.csv
 # Stores
 minio/
 minio_data/
+
+# Gitlab CI
+gitlab/
