@@ -69,8 +69,6 @@ Thumbs.db
 
 # Project specific
 logs/
-models/*.pkl
-models/*.json
 mlruns/
 data/processed/
 *.log
@@ -78,13 +76,8 @@ data/processed/
 
 # DVC
 .dvc/cache
-/data/iris.csv
 /data/processed/train.csv
 /data/processed/test.csv
-/models/scaler.pkl
-/models/logisticregression_model.pkl
-/models/randomforest_model.pkl
-/models/metadata.json
 
 # Docker
 .dockerignore

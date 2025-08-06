@@ -11,17 +11,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.10'
+<<<<<<< HEAD
+=======
+
+>>>>>>> imran
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install flake8
+      
       - name: Lint with flake8
         run: |
+          # Run flake8 with specific error checks and configurations
           flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
           flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
@@ -30,13 +37,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
+<<<<<<< HEAD
         uses: actions/checkout@v3
       - name: Set up Python and DVC
         uses: iterative/setup-dvc@v1
         with:
           python-version: '3.10'
+=======
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python and DVC
+        uses: iterative/setup-dvc@v1
+      
+>>>>>>> imran
       - name: Install Python dependencies
         run: pip install -r requirements.txt dvc[s3]
+
       - name: Configure DVC for MinIO
         env:
           MINIO_ENDPOINT_URL: ${{ secrets.MINIO_ENDPOINT_URL }}
@@ -44,63 +62,105 @@ jobs:
           MINIO_ACCESS_KEY: ${{ secrets.MINIO_ACCESS_KEY }}
           MINIO_SECRET_KEY: ${{ secrets.MINIO_SECRET_KEY }}
         run: |
-          dvc remote add -d origin s3://$DVC_REMOTE_BUCKET
+          # Configure the DVC remote storage
+          dvc remote add -f -d origin s3://$DVC_REMOTE_BUCKET
           dvc remote modify origin endpointurl $MINIO_ENDPOINT_URL
           dvc remote modify origin access_key_id $MINIO_ACCESS_KEY
           dvc remote modify origin secret_access_key $MINIO_SECRET_KEY
+      
       - name: Pull data from DVC remote
-        run: dvc pull
-      - name: Run DVC pipeline
+        run: dvc pull || true
+      
+      - name: Reproduce DVC pipeline
         run: dvc repro
+      
       - name: Push data to DVC remote
         run: dvc push
-      - name: Commit DVC changes
-        run: |
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git add .
-          git commit -m "DVC pipeline run by GitHub Actions" || echo "No changes to commit"
-          git push
 
+      - name: Commit and Push DVC changes
+        run: |
+          # Configure git user for the commit
+          git config --global user.name '2023ac05619'
+          git config --global user.email '2023ac05619@wilp.bits-pilani.ac.in'
+          git config --global http.sslVerify false
+          
+          # Add all changes (e.g., dvc.lock file)
+          git add .
+          
+          # Commit the changes if there are any, and skip CI for this commit
+          git commit -m "DVC pipeline run by GitHub Actions [ci skip]" || echo "No changes to commit"
+          
+          # Push the changes back to the main branch
+          git push "https://${{ secrets.GH_USER }}:${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }}" HEAD:main
+
+  #--------------------------------------------------
+  # DOCKER JOB: Builds and pushes the Docker image
+  #--------------------------------------------------
   build-and-push-docker:
     needs: run-dvc-pipeline
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
+<<<<<<< HEAD
         uses: actions/checkout@v3
+=======
+        uses: actions/checkout@v4
+
+>>>>>>> imran
       - name: Log in to Docker Hub
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+<<<<<<< HEAD
+=======
+
+>>>>>>> imran
       - name: Build and push Docker image
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v5
         with:
           context: .
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/mlops-iris-classifier:latest
 
+  #--------------------------------------------------
+  # DEPLOY JOB: Deploys the application to a server
+  #--------------------------------------------------
   deploy:
     needs: build-and-push-docker
     runs-on: ubuntu-latest
     steps:
+<<<<<<< HEAD
       - name: Checkout code
         uses: actions/checkout@v3
       - name: Deploy to remote server
         uses: appleboy/ssh-action@master
+=======
+      - name: Deploy to remote server via SSH
+        uses: appleboy/ssh-action@v1.0.3
+>>>>>>> imran
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USERNAME }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           script: |
-            if [ ! -d "mlops-iris-classifier" ]; then
-              git clone https://github.com/${{ github.repository }}.git
-              cd mlops-iris-classifier
+            # This script runs on your deployment server
+            # It clones the repo if it doesn't exist, otherwise pulls the latest changes.
+            # Using a PAT in the clone URL is recommended for private repositories.
+            REPO_URL="https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }}.git"
+            REPO_DIR="mlops-iris" # Define a directory name
+
+            if [ ! -d "$REPO_DIR" ]; then
+              echo "Cloning repository..."
+              git clone "$REPO_URL" "$REPO_DIR"
+              cd "$REPO_DIR"
             else
-              cd mlops-iris-classifier
+              echo "Pulling latest changes..."
+              cd "$REPO_DIR"
               git pull
             fi
             
-            # Now calls the new app deployment script
+            # Make the deployment script executable and run it
+            echo "Running deployment script..."
             chmod +x ./scripts/deploy.sh
             ./scripts/deploy.sh

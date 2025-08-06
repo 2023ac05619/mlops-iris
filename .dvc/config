@@ -1,8 +1,7 @@
 [core]
     remote = origin
-    analytics = false
-    check_update = false
-
 ['remote "origin"']
-    url = https://github.com/2023ac05619/mlops-iris-classifier.git
-    auth = github
+    url = s3://dvc-storage
+    endpointurl = http://192.168.18.2:9000
+    access_key_id = minioadmin
+    secret_access_key = minioadmin

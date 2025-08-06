@@ -1,17 +1,26 @@
 import uvicorn
 import joblib
 import json
-from pathlib import Path
+from src.data_pipeline import load_raw_data, split_data
+from src.model_pipeline import train_models
 from prometheus_fastapi_instrumentator import Instrumentator
 from prometheus_client import Gauge
+import os
+import sys
+from pathlib import Path
+
+# Adding project root to Python path
+sys.path.append(str(Path(__file__).parent))
+
 
 # Add root to path
-import sys
 ROOT_DIR_APP = Path(__file__).parent.parent
 sys.path.append(str(ROOT_DIR_APP))
 
 from app.api import app
 from config.config import MODELS_DIR, METADATA_FILE, SCALER_FILE, API_HOST, API_PORT
+
+
 
 # --- Prometheus Metrics ---
 # This gauge will track predictions for each model
@@ -50,5 +59,18 @@ def load_artifacts():
 
 
 if __name__ == "__main__":
+    
+    try:
+        # Run complete pipeline
+        load_raw_data()
+        split_data()
+        train_models()
+        
+    except Exception as e:
+        print(f"[ERROR] Pipeline failed: {e}")
+        raise
+
     uvicorn.run(app, host=API_HOST, port=API_PORT)
+
+
 
