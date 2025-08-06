@@ -1,7 +1,4 @@
 [core]
     remote = origin
 ['remote "origin"']
-    url = s3://dvc-storage
-    endpointurl = http://192.168.18.2:9000
-    access_key_id = minioadmin
-    secret_access_key = minioadmin
+    url = s3://dvc-storage-2023ac05619
