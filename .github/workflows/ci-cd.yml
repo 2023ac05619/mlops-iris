@@ -41,50 +41,48 @@ jobs:
       - name: Set up Python and DVC
         uses: iterative/setup-dvc@v1
       
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      
       - name: Install Python dependencies
         run: pip install -r requirements.txt dvc[s3]
 
-      - name: Configure DVC for MinIO
-        env:
-          MINIO_ENDPOINT_URL: ${{ secrets.MINIO_ENDPOINT_URL }}
-          DVC_REMOTE_BUCKET: ${{ secrets.DVC_REMOTE_BUCKET }}
-          MINIO_ACCESS_KEY: ${{ secrets.MINIO_ACCESS_KEY }}
-          MINIO_SECRET_KEY: ${{ secrets.MINIO_SECRET_KEY }}
+      - name: Configure DVC for AWS S3
         run: |
-          # Configure the DVC remote storage
-          dvc remote add -f -d origin s3://$DVC_REMOTE_BUCKET
-          dvc remote modify origin endpointurl $MINIO_ENDPOINT_URL
-          dvc remote modify origin access_key_id $MINIO_ACCESS_KEY
-          dvc remote modify origin secret_access_key $MINIO_SECRET_KEY
+          # Configure the DVC remote storage to point to your S3 bucket
+          dvc remote add -f -d storage s3://${{ secrets.AWS_S3_BUCKET }}
+          # Ensure any old endpointurl is removed
+          dvc remote modify storage endpointurl ""
       
       - name: Pull data from DVC remote
-        run: dvc pull || true
+        run: dvc pull -r storage || true
       
       - name: Reproduce DVC pipeline
         run: dvc repro
       
       - name: Push data to DVC remote
-        run: dvc push
+        run: dvc push -r storage
 
       - name: Commit and Push DVC changes
         run: |
           # Configure git user for the commit
-          git config --global user.name '2023ac05619'
-          git config --global user.email '2023ac05619@wilp.bits-pilani.ac.in'
-          git config --global http.sslVerify false
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           
           # Add all changes (e.g., dvc.lock file)
           git add .
           
           # Commit the changes if there are any, and skip CI for this commit
-          git commit -m "DVC pipeline run by GitHub Actions [ci skip]" || echo "No changes to commit"
+          git commit -m "Update DVC tracked files [ci skip]" || echo "No changes to commit"
           
           # Push the changes back to the main branch
-          git push "https://${{ secrets.GH_USER }}:${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }}" HEAD:main
+          git push "https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }}" HEAD:main
 
-  #--------------------------------------------------
-  # DOCKER JOB: Builds and pushes the Docker image
-  #--------------------------------------------------
+
   build-and-push-docker:
     needs: run-dvc-pipeline
     runs-on: ubuntu-latest
@@ -105,9 +103,7 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/mlops-iris-classifier:latest
 
-  #--------------------------------------------------
-  # DEPLOY JOB: Deploys the application to a server
-  #--------------------------------------------------
+
   deploy:
     needs: build-and-push-docker
     runs-on: ubuntu-latest
@@ -121,9 +117,8 @@ jobs:
           script: |
             # This script runs on your deployment server
             # It clones the repo if it doesn't exist, otherwise pulls the latest changes.
-            # Using a PAT in the clone URL is recommended for private repositories.
             REPO_URL="https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }}.git"
-            REPO_DIR="mlops-iris" # Define a directory name
+            REPO_DIR="mlops-iris"
 
             if [ ! -d "$REPO_DIR" ]; then
               echo "Cloning repository..."
