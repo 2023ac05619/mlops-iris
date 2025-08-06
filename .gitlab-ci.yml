@@ -1,0 +1,96 @@
+stages:
+  - lint
+  - dvc
+  - docker
+  - deploy
+
+lint:
+  stage: lint
+  image: python:3.10
+  script:
+    - python -m pip install --upgrade pip
+    - pip install flake8
+    - flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+    - flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+  only:
+    - main
+
+run-dvc-pipeline:
+  stage: dvc
+  image: python:3.10
+  dependencies:
+    - lint
+  script:
+    - pip install -r requirements.txt dvc[s3]
+    - dvc remote add -f -d origin s3://$DVC_REMOTE_BUCKET
+    - dvc remote modify origin endpointurl $MINIO_ENDPOINT_URL
+    - dvc remote modify origin access_key_id $MINIO_ACCESS_KEY
+    - dvc remote modify origin secret_access_key $MINIO_SECRET_KEY
+    - dvc pull || true
+    - dvc repro
+    - dvc push
+    - git config --global user.name '2023ac05619'
+    - git config --global user.email '2023ac05619@wilp.bits-pilani.ac.in'
+    - git config --global http.sslVerify false
+    - git add .
+    - git commit -m "DVC pipeline run by GitLab CI [ci skip]" || echo "No changes to commit"
+    - git push "https://${CI_USER}:${CI_TOKEN}@adslgit.yawal.io/${CI_USER}/mlops-iris.git" HEAD:main
+  only:
+    - main
+
+build-and-push-docker:
+  stage: docker
+  image: docker:latest
+  services:
+    - name: docker:dind
+      alias: docker
+  variables:
+    DOCKER_HOST: tcp://docker:2375/
+    DOCKER_TLS_CERTDIR: ""
+  dependencies:
+    - run-dvc-pipeline
+  script:
+    - echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+    # - echo "Creating .env file..."
+    # - |
+    #   cat <<EOF > .env
+    #   MINIO_ENDPOINT_URL=$MINIO_ENDPOINT_URL
+    #   MINIO_ACCESS_KEY=$MINIO_ACCESS_KEY
+    #   MINIO_SECRET_KEY=$MINIO_SECRET_KEY
+    #   DVC_REMOTE_BUCKET=$DVC_REMOTE_BUCKET
+    #   DOCKERHUB_USERNAME=$DOCKERHUB_USERNAME
+    #   DOCKERHUB_TOKEN=$DOCKERHUB_TOKEN
+    #   DEPLOY_HOST=$DEPLOY_HOST
+    #   DEPLOY_USERNAME=$DEPLOY_USERNAME
+    #   EOF
+    - docker build -t "$DOCKERHUB_USERNAME/mlops-iris-classifier:latest" .
+    # - rm -f .env
+    - docker push "$DOCKERHUB_USERNAME/mlops-iris-classifier:latest"
+  only:
+    - main
+
+deploy:
+  stage: deploy
+  image: alpine:latest
+  dependencies:
+    - build-and-push-docker
+  script:
+    # Save the SSH deploy key as file; make sure you have set DEPLOY_SSH_KEY as a protected file variable
+    - apk add --no-cache openssh-client openssl git 
+    - echo "$DEPLOY_SSH_KEY" > id_rsa
+    - chmod 600 id_rsa
+    - openssl rsa -in id_rsa -check || exit 1
+    # Connect & deploy
+    - ssh -v -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i id_rsa ubuntu@192.168.203.174 "
+        if [ ! -d 'mlops-iris-classifier' ]; then
+          git clone https://adslgit.yawal.io/${CI_USER}/mlops-iris.git.git
+          cd mlops-iris-classifier
+        else
+          cd mlops-iris-classifier
+          git pull
+        fi
+        chmod +x ./scripts/deploy.sh
+        ./scripts/deploy.sh
+      "
+  only:
+    - main

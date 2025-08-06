@@ -1,0 +1,28 @@
+{
+    "experiment_name": "Iris_Classification_Experiment",
+    "models": {
+        "LogisticRegression": {
+            "run_id": "15cffb541eb04c1a9a2e3f03118212c5",
+            "accuracy": 0.9333333333333333,
+            "path": "/home/ubuntu/mlops-iris/models/LogisticRegression.pkl"
+        },
+        "RandomForest": {
+            "run_id": "1a3e4b6dac9d43a08e90c3264daa47ea",
+            "accuracy": 0.9333333333333333,
+            "path": "/home/ubuntu/mlops-iris/models/RandomForest.pkl"
+        }
+    },
+    "scaler_path": "/home/ubuntu/mlops-iris/models/scaler.pkl",
+    "training_timestamp": "2025-08-06T07:56:20.937347",
+    "feature_names": [
+        "sepal length (cm)",
+        "sepal width (cm)",
+        "petal length (cm)",
+        "petal width (cm)"
+    ],
+    "target_names": [
+        "setosa",
+        "versicolor",
+        "virginica"
+    ]
+}
