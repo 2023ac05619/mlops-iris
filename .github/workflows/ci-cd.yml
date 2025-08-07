@@ -56,7 +56,7 @@ jobs:
           # Configure the DVC remote storage to point to your S3 bucket
           dvc remote add -f -d storage s3://${{ secrets.AWS_S3_BUCKET }}
           # Ensure any old endpointurl is removed
-          dvc remote modify storage endpointurl ""
+          dvc remote modify storage endpointurl "https://localhost.localstack.cloud:4566"
       
       - name: Pull data from DVC remote
         run: dvc pull -r storage || true
