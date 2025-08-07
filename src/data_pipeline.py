@@ -1,42 +1,56 @@
 import pandas as pd
-from sklearn.datasets import load_iris
 from sklearn.model_selection import train_test_split
-import sys
 from pathlib import Path
+import sys
+import yaml
 
-# Add root to path to allow module imports
-ROOT_DIR_SCRIPT = Path(__file__).parent.parent
-sys.path.append(str(ROOT_DIR_SCRIPT))
+# --- Fix for ModuleNotFoundError ---
+# Add the project root directory to the Python path
+# sys.path.append(str(Path(__file__).parent.parent))
+# # -----------------------------------
+# from config.config import DATA_DIR, RAW_DATA_FILE, TRAIN_DATA_FILE, TEST_DATA_FILE
 
-from config.config import RAW_DATA_FILE, TRAIN_DATA_FILE, TEST_DATA_FILE, TEST_SIZE, RANDOM_STATE, TARGET_COLUMN
 
-def load_raw_data():
-    """Loads the Iris dataset and saves it to a CSV file."""
-    print("--- Starting: Load Raw Data ---")
-    iris = load_iris()
-    df = pd.DataFrame(data=iris.data, columns=iris.feature_names)
-    df[TARGET_COLUMN] = iris.target
-    df.to_csv(RAW_DATA_FILE, index=False)
-    print(f"Raw data saved to {RAW_DATA_FILE}")
-    print("--- Finished: Load Raw Data ---\n")
+ROOT_DIR = Path(__file__).parent.parent
+DATA_DIR = ROOT_DIR / "data"
+RAW_DATA_FILE = DATA_DIR / "iris_full.csv"
+TRAIN_DATA_FILE = DATA_DIR / "processed" / "train.csv"
+TEST_DATA_FILE = DATA_DIR / "processed" / "test.csv"
 
-def split_data():
-    """Splits the raw data into training and testing sets."""
-    print("--- Starting: Split Data ---")
+
+def run_data_pipeline():
+    """
+    Loads raw data, cleans column names, splits the data, and saves the
+    processed files based on parameters from params.yaml.
+    """
+    print("--- DVC Stage: Running Data Preprocessing ---")
+    
+    # Load parameters from params.yaml
+    with open("params.yaml", 'r') as f:
+        params = yaml.safe_load(f)
+        test_size = params['TEST_SIZE']
+        random_state = params['RANDOM_STATE']
+        
+    processed_dir = DATA_DIR / "processed"
+    processed_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Load the CSV, letting pandas automatically detect the header
     df = pd.read_csv(RAW_DATA_FILE)
-    train_df, test_df = train_test_split(
-        df, test_size=TEST_SIZE, random_state=RANDOM_STATE, stratify=df[TARGET_COLUMN]
-    )
-    train_df.to_csv(TRAIN_DATA_FILE, index=False)
-    test_df.to_csv(TEST_DATA_FILE, index=False)
-    print(f"Training data saved to {TRAIN_DATA_FILE}")
-    print(f"Testing data saved to {TEST_DATA_FILE}")
-    print("--- Finished: Split Data ---\n")
+    
+    # Clean up column names by removing "(cm)" and stripping whitespace
+    # df.columns = [col.replace('(cm)', '').strip() for col in df.columns]
+    df.columns = [col.replace('(cm)', '').strip().lower() for col in df.columns]
+    
+    X = df.drop('species', axis=1)
+    y = df['species']
+    
+    # Removed stratify=y to handle cases where a class has only one member
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=random_state)
+    
+    pd.concat([X_train, y_train], axis=1).to_csv(TRAIN_DATA_FILE, index=False)
+    pd.concat([X_test, y_test], axis=1).to_csv(TEST_DATA_FILE, index=False)
+    
+    print("--- DVC Stage: Data Preprocessing Finished ---")
 
 if __name__ == "__main__":
-    if len(sys.argv) > 1:
-        if sys.argv[1] == "load":
-            load_raw_data()
-        elif sys.argv[1] == "split":
-            split_data()
-
+    run_data_pipeline()
