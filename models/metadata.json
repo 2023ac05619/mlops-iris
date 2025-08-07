@@ -2,18 +2,18 @@
     "experiment_name": "Iris_Classification_Experiment",
     "models": {
         "LogisticRegression": {
-            "run_id": "d6fd8fd9ffa54760af066a933aae1c9b",
+            "run_id": "43a0a0849826465a97cae9ac6edbf651",
             "accuracy": 0.9333333333333333,
-            "path": "/home/ubuntu/mlops-iris/models/LogisticRegression.pkl"
+            "path": "/home/ubuntu/github/mlops-iris/models/LogisticRegression.pkl"
         },
         "RandomForest": {
-            "run_id": "338065a6e2044f35aae53ee4ecb1a40d",
+            "run_id": "79062d14f49d4ee082ecfd687f360816",
             "accuracy": 0.9333333333333333,
-            "path": "/home/ubuntu/mlops-iris/models/RandomForest.pkl"
+            "path": "/home/ubuntu/github/mlops-iris/models/RandomForest.pkl"
         }
     },
-    "scaler_path": "/home/ubuntu/mlops-iris/models/scaler.pkl",
-    "training_timestamp": "2025-08-06T15:31:42.908928",
+    "scaler_path": "/home/ubuntu/github/mlops-iris/models/scaler.pkl",
+    "training_timestamp": "2025-08-07T05:12:41.795970",
     "feature_names": [
         "sepal length (cm)",
         "sepal width (cm)",

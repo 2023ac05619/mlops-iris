@@ -1,4 +1,13 @@
 [core]
-    remote = storage
+    remote = origin
 ['remote "storage"']
     url = s3://dvc-storage-2023ac05619
+    endpointurl = https://localhost.localstack.cloud:4566
+    access_key_id = test
+    secret_access_key = test
+    region = us-east-1
+['remote "origin"']
+    url = s3://dvc-storage
+    endpointurl = https://localhost.localstack.cloud:4566
+    access_key_id = test
+    secret_access_key = test
