@@ -7,31 +7,8 @@ services:
     # build:
     #   context: .
     #   dockerfile: Dockerfile
-    environment:
-      - DATABASE_URL=postgresql://user:password@db/iris_db
-      - MLFLOW_TRACKING_URI=http://mlflow:5000
     ports:
       - "5001:5001"
-    volumes:
-      - ./mlruns:/app/mlruns
-    depends_on:
-      - db
-      - mlflow
-    networks:
-      - mlops-net
-
-  db:
-    image: postgres:13
-    container_name: postgres
-    restart: always
-    environment:
-      - POSTGRES_USER=user
-      - POSTGRES_PASSWORD=password
-      - POSTGRES_DB=iris_db
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data/
     networks:
       - mlops-net
 
@@ -40,16 +17,14 @@ services:
     container_name: mlflow
     restart: always
     command: >
-      mlflow server
-      --backend-store-uri postgresql://user:password@db/iris_db
-      --default-artifact-root /mlruns
+      mlflow ui
       --host 0.0.0.0
+      --port 5000
+      --backend-store-uri /mlruns/mlruns
     ports:
       - "5000:5000"
     volumes:
       - ./mlruns:/mlruns
-    depends_on:
-      - db
     networks:
       - mlops-net
 
@@ -80,9 +55,6 @@ services:
       - ./grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml
     networks:
       - mlops-net
-
-volumes:
-  postgres_data:
 
 networks:
   mlops-net:
