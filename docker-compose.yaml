@@ -62,7 +62,7 @@ services:
     ports:
       - "9090:9090"
     volumes:
-      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
     networks:
       - mlops-net
 
@@ -77,7 +77,7 @@ services:
       - "3000:3000"
     volumes:
       - ./grafana-dashboard.json:/etc/grafana/provisioning/dashboards/dashboard.json
-      - ./config/grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml
+      - ./grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml
     networks:
       - mlops-net
 

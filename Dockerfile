@@ -12,8 +12,8 @@ COPY ./api /app/api
 COPY ./db /app/db
 COPY ./models /app/models
 COPY ./src /app/src
-# COPY ./train /app/train
-# COPY ./config /app/config
+COPY ./train /app/train
+COPY ./config.py /app/config.py
 
 EXPOSE 5001
 
