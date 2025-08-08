@@ -1,20 +1,20 @@
 stages:
   preprocess:
-    cmd: python src/data_pipeline.py
+    cmd: python train/data_preprocessing.py
     deps:
       - data/iris_full.csv
-      - src/data_pipeline.py
+      - train/data_preprocessing.py
     params:
       - TEST_SIZE
       - RANDOM_STATE
     outs:
-      - data/processed
+      - data/processed_data.pkl
 
   train:
-    cmd: python src/model_pipeline.py
+    cmd: python train/model_training.py
     deps:
-      - data/processed
-      - src/model_pipeline.py
+      - data/processed_data.pkl
+      - train/model_training.py
     params:
       - training
       - RANDOM_STATE

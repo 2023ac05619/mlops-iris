@@ -1,55 +1,51 @@
 schema: '2.0'
 stages:
-  load_data:
-    cmd: python src/data_pipeline.py load
-    deps:
-    - path: src/data_pipeline.py
-      hash: md5
-      md5: 117a26fae26005f683f42fea7481f0a5
-      size: 1504
-    outs:
-    - path: data/iris_full.csv
-      hash: md5
-      md5: 4d301abed5efe50eccda350cde38e0eb
-      size: 2777
-  split_data:
-    cmd: python src/data_pipeline.py split
-    deps:
-    - path: data/iris_full.csv
-      hash: md5
-      md5: 4d301abed5efe50eccda350cde38e0eb
-      size: 2777
-    - path: src/data_pipeline.py
-      hash: md5
-      md5: 117a26fae26005f683f42fea7481f0a5
-      size: 1504
-    outs:
-    - path: data/test.csv
-      hash: md5
-      md5: 12633f6b7b7282fb932761e33b24d21d
-      size: 617
-    - path: data/train.csv
-      hash: md5
-      md5: 47fd89ce6c52daa555a94670836c67a2
-      size: 2237
   preprocess:
-    cmd: python src/data_pipeline.py
+    cmd: python train/data_preprocessing.py
     deps:
     - path: data/iris_full.csv
       hash: md5
-      md5: 4d301abed5efe50eccda350cde38e0eb
-      size: 2777
-    - path: src/data_pipeline.py
+      md5: 9b81a5b2beab90b5e381dfb33627d536
+      size: 4189
+    - path: train/data_preprocessing.py
       hash: md5
-      md5: 7ad22b6f706faf53447bb3020bd6950b
-      size: 2013
+      md5: 8cf59caf5bbbc819458becbcdf8da2f9
+      size: 843
     params:
       params.yaml:
         RANDOM_STATE: 42
         TEST_SIZE: 0.2
     outs:
-    - path: data/processed
+    - path: data/processed_data.pkl
       hash: md5
-      md5: 345b4556d03fdec64780ed62f584a17c.dir
-      size: 2893
-      nfiles: 2
+      md5: 1f8836f3d7fe1e5ee0e92cc629ae1530
+      size: 7319
+  train:
+    cmd: python train/model_training.py
+    deps:
+    - path: data/processed_data.pkl
+      hash: md5
+      md5: 1f8836f3d7fe1e5ee0e92cc629ae1530
+      size: 7319
+    - path: train/model_training.py
+      hash: md5
+      md5: 959e406cfb04404066094ce7922a311c
+      size: 622
+    params:
+      params.yaml:
+        RANDOM_STATE: 42
+        training:
+          mlflow_experiment_name: Iris-Classifier-DVC
+          models:
+            LogisticRegression:
+              C: 1.0
+              solver: lbfgs
+            RandomForest:
+              n_estimators: 100
+              max_depth: 10
+    outs:
+    - path: models
+      hash: md5
+      md5: 413be81210b6b04b725db3df3240004f.dir
+      size: 2359
+      nfiles: 3

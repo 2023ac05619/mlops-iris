@@ -1,25 +1,25 @@
 from pathlib import Path
-import os
-from dotenv import load_dotenv
 
-# Load environment variables from .env file at the project root
-load_dotenv(dotenv_path=Path(__file__).parent.parent / '.env')
-
-# --- Directories ---
-ROOT_DIR = Path(__file__).parent.parent
-DATA_DIR = ROOT_DIR / "data"
+# Directory Structure
+ROOT_DIR = Path(__file__).parent
 MODELS_DIR = ROOT_DIR / "models"
+LOGS_DIR = ROOT_DIR / "logs"
+DATA_DIR = ROOT_DIR / "data"
+MLRUNS_DIR = ROOT_DIR / "mlruns"
 
-# --- Files ---
-# Corrected path to point directly to iris_full.csv
-RAW_DATA_FILE = DATA_DIR / "iris_full.csv"
-TRAIN_DATA_FILE = DATA_DIR / "processed" / "train.csv"
-TEST_DATA_FILE = DATA_DIR / "processed" / "test.csv"
-SCALER_FILE = MODELS_DIR / "scaler.pkl"
+# File Paths
+DB_PATH = LOGS_DIR / "predictions.db"
+LOG_FILE = LOGS_DIR / "requests.log"
 METADATA_FILE = MODELS_DIR / "metadata.json"
+SCALER_FILE = MODELS_DIR / "scaler.pkl"
 
-# --- API & Deployment ---
-GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
-GITHUB_REPO = os.getenv("GITHUB_REPO")
-API_HOST = os.getenv("API_HOST", "0.0.0.0")
-API_PORT = int(os.getenv("API_PORT", 8000))
+# Model Configuration
+EXPERIMENT_NAME = "Iris_Classification_Experiment"
+RETRAIN_THRESHOLD = 10
+MODEL_CONFIGS = {
+    "LogisticRegression": {'C': 1.0, 'max_iter': 200, 'random_state': 42},
+    "RandomForest": {'n_estimators': 100, 'max_depth': 5, 'random_state': 42}
+}
+
+for directory in [MODELS_DIR, LOGS_DIR, DATA_DIR, MLRUNS_DIR]:
+    directory.mkdir(parents=True, exist_ok=True)

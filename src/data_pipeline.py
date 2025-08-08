@@ -1,56 +1,63 @@
 import pandas as pd
+import numpy as np
+from sklearn.datasets import load_iris
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+
 from pathlib import Path
-import sys
-import yaml
-
-# --- Fix for ModuleNotFoundError ---
-# Add the project root directory to the Python path
-# sys.path.append(str(Path(__file__).parent.parent))
-# # -----------------------------------
-# from config.config import DATA_DIR, RAW_DATA_FILE, TRAIN_DATA_FILE, TEST_DATA_FILE
-
-
 ROOT_DIR = Path(__file__).parent.parent
 DATA_DIR = ROOT_DIR / "data"
-RAW_DATA_FILE = DATA_DIR / "iris_full.csv"
-TRAIN_DATA_FILE = DATA_DIR / "processed" / "train.csv"
-TEST_DATA_FILE = DATA_DIR / "processed" / "test.csv"
+DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 
-def run_data_pipeline():
-    """
-    Loads raw data, cleans column names, splits the data, and saves the
-    processed files based on parameters from params.yaml.
-    """
-    print("--- DVC Stage: Running Data Preprocessing ---")
+class DataPipeline:
     
-    # Load parameters from params.yaml
-    with open("params.yaml", 'r') as f:
-        params = yaml.safe_load(f)
-        test_size = params['TEST_SIZE']
-        random_state = params['RANDOM_STATE']
+    def __init__(self):
+        self.scaler = StandardScaler()
+        self.feature_names = None
+        self.target_names = None
         
-    processed_dir = DATA_DIR / "processed"
-    processed_dir.mkdir(parents=True, exist_ok=True)
-    
-    # Load the CSV, letting pandas automatically detect the header
-    df = pd.read_csv(RAW_DATA_FILE)
-    
-    # Clean up column names by removing "(cm)" and stripping whitespace
-    # df.columns = [col.replace('(cm)', '').strip() for col in df.columns]
-    df.columns = [col.replace('(cm)', '').strip().lower() for col in df.columns]
-    
-    X = df.drop('species', axis=1)
-    y = df['species']
-    
-    # Removed stratify=y to handle cases where a class has only one member
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=random_state)
-    
-    pd.concat([X_train, y_train], axis=1).to_csv(TRAIN_DATA_FILE, index=False)
-    pd.concat([X_test, y_test], axis=1).to_csv(TEST_DATA_FILE, index=False)
-    
-    print("--- DVC Stage: Data Preprocessing Finished ---")
-
-if __name__ == "__main__":
-    run_data_pipeline()
+    def load_iris_dataset(self):
+        iris = load_iris()
+        self.feature_names = iris.feature_names
+        self.target_names = list(iris.target_names)
+        return iris.data, iris.target
+        
+    def save_raw_data(self, X, y):
+        df = pd.DataFrame(X, columns=self.feature_names)
+        df['target'] = y
+        df['target_name'] = [self.target_names[i] for i in y]
+        df.to_csv(DATA_DIR / "iris_full.csv", index=False)
+        print(f"[INFO] Raw data saved to {DATA_DIR / 'iris_full.csv'}")
+        
+    def split_and_scale_data(self, X, y):
+        X_train, X_test, y_train, y_test = train_test_split(
+            X, y, test_size=0.2, random_state=42, stratify=y
+        )
+        
+        X_train_scaled = self.scaler.fit_transform(X_train)
+        X_test_scaled = self.scaler.transform(X_test)
+        
+        return X_train_scaled, X_test_scaled, y_train, y_test
+        
+    def load_and_preprocess(self):
+        print("[INFO] Loading Iris dataset...")
+        X, y = self.load_iris_dataset()
+        
+        print("[INFO] Saving raw data...")
+        self.save_raw_data(X, y)
+        
+        print("[INFO] Splitting and scaling data...")
+        X_train, X_test, y_train, y_test = self.split_and_scale_data(X, y)
+        
+        print(f"[INFO] Train set shape: {X_train.shape}, Test set shape: {X_test.shape}")
+        
+        return {
+            'X_train': X_train,
+            'X_test': X_test,
+            'y_train': y_train,
+            'y_test': y_test,
+            'scaler': self.scaler,
+            'feature_names': self.feature_names,
+            'target_names': self.target_names
+        }

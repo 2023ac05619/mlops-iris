@@ -80,6 +80,7 @@ data/processed/
 data/iris_full.csv
 /data/processed/train.csv
 /data/processed/test.csv
+models/
 
 # Docker
 .dockerignore
@@ -91,3 +92,4 @@ minio_data/
 
 # Gitlab CI
 gitlab/
+/models

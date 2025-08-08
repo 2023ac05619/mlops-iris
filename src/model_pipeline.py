@@ -1,78 +1,118 @@
-import pandas as pd
-import yaml
+import mlflow
+import mlflow.sklearn
 import joblib
 import json
-import mlflow
-from sklearn.preprocessing import StandardScaler
-from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import RandomForestClassifier
-from pathlib import Path
 from datetime import datetime
-import sys
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score, classification_report
+# from config import MODELS_DIR, METADATA_FILE, SCALER_FILE, EXPERIMENT_NAME, MODEL_CONFIGS
 
-# --- Fix for ModuleNotFoundError ---
-# sys.path.append(str(Path(__file__).parent.parent))
-# -----------------------------------
-# from config import MODELS_DIR, TRAIN_DATA_FILE
+from pathlib import Path
 ROOT_DIR = Path(__file__).parent.parent
-DATA_DIR = ROOT_DIR / "data"
 MODELS_DIR = ROOT_DIR / "models"
-TRAIN_DATA_FILE = DATA_DIR / "processed" / "train.csv"
+MODELS_DIR.mkdir(parents=True, exist_ok=True)
+METADATA_FILE = MODELS_DIR / "metadata.json"
+SCALER_FILE = MODELS_DIR / "scaler.pkl"
+EXPERIMENT_NAME = "Iris_Classification_Experiment"
+MODEL_CONFIGS = {
+    "LogisticRegression": {'C': 1.0, 'max_iter': 200, 'random_state': 42},
+    "RandomForest": {'n_estimators': 100, 'max_depth': 5, 'random_state': 42}
+}
 
-def run_model_pipeline():
-    """
-    Trains models, logs to MLflow, and saves artifacts for DVC.
-    """
-    print("--- DVC Stage: Running Model Training ---")
+
+class ModelPipeline:
     
-    with open("params.yaml", 'r') as f:
-        params = yaml.safe_load(f)
-        training_params = params['training']
-        random_state = params['RANDOM_STATE'] # Get top-level random state
+    def __init__(self):
+        self.models = {
+            "LogisticRegression": LogisticRegression,
+            "RandomForest": RandomForestClassifier
+        }
         
-    train_df = pd.read_csv(TRAIN_DATA_FILE)
-    X_train = train_df.drop('species', axis=1)
-    y_train = train_df['species']
-    
-    scaler = StandardScaler()
-    X_train_scaled = scaler.fit_transform(X_train)
-    
-    mlflow.set_experiment(training_params['mlflow_experiment_name'])
-    
-    models_trained = {}
-    
-    with mlflow.start_run(run_name="LogisticRegression") as run:
-        lr_params = training_params['models']['LogisticRegression']
-        mlflow.log_params(lr_params)
-        lr = LogisticRegression(**lr_params, random_state=random_state)
-        lr.fit(X_train_scaled, y_train)
-        mlflow.sklearn.log_model(lr, "model")
-        models_trained['LogisticRegression'] = {'run_id': run.info.run_id, 'model': lr}
-
-    with mlflow.start_run(run_name="RandomForest") as run:
-        rf_params = training_params['models']['RandomForest']
-        mlflow.log_params(rf_params)
-        rf = RandomForestClassifier(**rf_params, random_state=random_state)
-        rf.fit(X_train_scaled, y_train)
-        mlflow.sklearn.log_model(rf, "model")
-        models_trained['RandomForest'] = {'run_id': run.info.run_id, 'model': rf}
+    def train_single_model(self, model_name, model_class, params, X_train, y_train, X_test, y_test):
+        with mlflow.start_run(run_name=model_name) as run:
+            # Log parameters
+            mlflow.log_params(params)
+            
+            # Train model
+            model = model_class(**params)
+            model.fit(X_train, y_train)
+            
+            # Evaluate model
+            y_pred = model.predict(X_test)
+            accuracy = accuracy_score(y_test, y_pred)
+            
+            # Log metrics
+            mlflow.log_metric("accuracy", accuracy)
+            mlflow.sklearn.log_model(model, "model")
+            
+            print(f"[INFO] {model_name}: Accuracy = {accuracy:.4f}")
+            
+            return model, accuracy, run.info.run_id
+            
+    def train_and_evaluate(self, data):
+        X_train, X_test = data['X_train'], data['X_test']
+        y_train, y_test = data['y_train'], data['y_test']
+        scaler = data['scaler']
+        feature_names = data['feature_names']
+        target_names = data['target_names']
         
-    MODELS_DIR.mkdir(exist_ok=True)
-    
-    joblib.dump(scaler, MODELS_DIR / "scaler.pkl")
-    for name, data in models_trained.items():
-        joblib.dump(data['model'], MODELS_DIR / f"{name.lower()}_model.pkl")
-
-    metadata = {
-        'models_trained': list(models_trained.keys()),
-        'training_timestamp': datetime.now().isoformat(),
-        'feature_names': list(X_train.columns),
-        'target_names': sorted(list(y_train.unique()))
-    }
-    with open(MODELS_DIR / "metadata.json", 'w') as f:
-        json.dump(metadata, f, indent=4)
+        # Set up MLflow experiment
+        mlflow.set_experiment(EXPERIMENT_NAME)
+        print(f"[INFO] MLflow experiment set to '{EXPERIMENT_NAME}'")
         
-    print("--- DVC Stage: Model Training Finished ---")
+        # Train all models
+        results = {}
+        for model_name, model_class in self.models.items():
+            params = MODEL_CONFIGS[model_name]
+            model, accuracy, run_id = self.train_single_model(
+                model_name, model_class, params, X_train, y_train, X_test, y_test
+            )
+            results[model_name] = {
+                'model': model,
+                'accuracy': accuracy,
+                'run_id': run_id
+            }
+            
+        # Select best model
+        best_model_name = max(results, key=lambda k: results[k]['accuracy'])
+        best_model_info = results[best_model_name]
+        
+        print(f"\n[INFO] Best model: {best_model_name} with accuracy: {best_model_info['accuracy']:.4f}")
+        
+        # Save artifacts
+        self._save_model_artifacts(
+            best_model_name, best_model_info, scaler, 
+            feature_names, target_names, results
+        )
+        
+        return best_model_info
+        
+    def _save_model_artifacts(self, best_model_name, best_model_info, scaler, 
+                            feature_names, target_names, all_results):
+        # Save best model
+        best_model = best_model_info['model']
+        model_path = MODELS_DIR / f"{best_model_name.lower()}_model.pkl"
+        joblib.dump(best_model, model_path)
+        
+        # Save scaler
+        joblib.dump(scaler, SCALER_FILE)
+        
+        # Save metadata
+        metadata = {
+            'best_model': best_model_name,
+            'best_accuracy': best_model_info['accuracy'],
+            'best_run_id': best_model_info['run_id'],
+            'feature_names': feature_names,
+            'target_names': target_names,
+            'models_evaluated': list(all_results.keys()),
+            'training_timestamp': datetime.now().isoformat(),
+            'model_path': str(model_path),
+            'scaler_path': str(SCALER_FILE)
+        }
+        
+        with open(METADATA_FILE, 'w') as f:
+            json.dump(metadata, f, indent=4)
+            
+        print(f"[INFO] Model artifacts saved to {MODELS_DIR}")
 
-if __name__ == "__main__":
-    run_model_pipeline()
