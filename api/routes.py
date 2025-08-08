@@ -3,10 +3,10 @@ import os
 import requests
 import logging
 from datetime import datetime
-from flask import request, jsonify, render_template_string, current_app
+from flask import request, jsonify, render_template_string, current_app, Response
 from pydantic import ValidationError
 from dotenv import load_dotenv
-
+from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
 from db.schemas import PredictionRequest, RetrainingRequest, NewDataSample
 from src.monitoring import MonitoringService, REQUEST_COUNT, REQUEST_LATENCY
 
@@ -92,31 +92,32 @@ def register_routes(app):
         return jsonify({"status": "healthy", "timestamp": datetime.now().isoformat()})
 
     @app.route('/predict', methods=['POST'])
+    @REQUEST_LATENCY.time()
     def predict():
         REQUEST_COUNT.labels(method='POST', endpoint='/predict').inc()
 
-        with REQUEST_LATENCY.time():
-            try:
-                inference_service, db_manager, _ = get_services()
+        # with REQUEST_LATENCY.time():
+        try:
+            inference_service, db_manager, _ = get_services()
 
-                request_data = PredictionRequest(**request.get_json())
-                response_data = inference_service.predict(request_data.features)
+            request_data = PredictionRequest(**request.get_json())
+            response_data = inference_service.predict(request_data.features)
 
-                timestamp = datetime.now().isoformat()
-                db_manager.log_prediction(
-                    timestamp, request_data.features,
-                    response_data.prediction_name,
-                    response_data.confidence,
-                    response_data.latency
-                )
+            timestamp = datetime.now().isoformat()
+            db_manager.log_prediction(
+                timestamp, request_data.features,
+                response_data.prediction_name,
+                response_data.confidence,
+                response_data.latency
+            )
 
-                return jsonify(response_data.model_dump())
+            return jsonify(response_data.model_dump())
 
-            except ValidationError as e:
-                return jsonify({"error": "Input validation failed", "details": json.loads(e.json())}), 400
-            except Exception as e:
-                logging.error(f"Error in /predict endpoint: {e}")
-                return jsonify({"error": str(e)}), 500
+        except ValidationError as e:
+            return jsonify({"error": "Input validation failed", "details": json.loads(e.json())}), 400
+        except Exception as e:
+            logging.error(f"Error in /predict endpoint: {e}")
+            return jsonify({"error": str(e)}), 500
 
     @app.route('/add_training_data', methods=['POST'])
     def add_training_data():
@@ -174,7 +175,7 @@ def register_routes(app):
             return jsonify({"error": str(e)}), 500
 
     @app.route('/system_metrics', methods=['GET'])
-    def metrics():
+    def system_metrics():
         REQUEST_COUNT.labels(method='GET', endpoint='/system_metrics').inc()
 
         try:
@@ -184,6 +185,10 @@ def register_routes(app):
         except Exception as e:
             logging.error(f"Error in /system_metrics endpoint: {e}")
             return jsonify({"error": str(e)}), 500
+
+    @app.route('/metrics')
+    def metrics():
+        return Response(generate_latest(), mimetype=CONTENT_TYPE_LATEST)
 
     @app.route('/predictions/history', methods=['GET'])
     def predictions_history():

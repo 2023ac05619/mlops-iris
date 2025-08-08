@@ -1,6 +1,7 @@
 from flask import Flask
 from flask_cors import CORS
 from prometheus_flask_exporter import PrometheusMetrics
+# from prometheus_fastapi_instrumentator import Instrumentator
 from src.monitoring import ACTIVE_CONNECTIONS
 
 
@@ -10,6 +11,7 @@ def create_app(inference_service, db_manager):
     
     # Initialize Prometheus metrics
     metrics = PrometheusMetrics(app)
+    # Instrumentator().instrument(app).expose(app)
     
     # Store services in app config for access in routes
     app.config['inference_service'] = inference_service

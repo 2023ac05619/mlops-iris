@@ -4,4 +4,4 @@ global:
 scrape_configs:
   - job_name: 'iris-app'
     static_configs:
-      - targets: ['iris-app:8000']
+      - targets: ['app:5001']
