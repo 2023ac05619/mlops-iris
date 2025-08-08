@@ -5,8 +5,6 @@ set -e
 
 # --- Load Environment Variables ---
 ENV_FILE="$(dirname "$0")/../.env"
-
-# Use a more robust method to load environment variables.
 if [ -f "$ENV_FILE" ]; then
     echo "Loading environment variables from .env file..."
     set -a
@@ -17,15 +15,13 @@ else
 fi
 
 echo "--- Ensuring a clean state by stopping existing services ---"
-# Stop and remove containers, networks, and volumes created by 'up' in previous runs.
 docker-compose down --remove-orphans
 
 echo "--- Starting MLOps Infrastructure ---"
 
-# Create necessary directories if they don't exist.
 # mkdir -p ./config
 
-# Create Prometheus config only if it doesn't exist to avoid overwriting user changes.
+# Create Prometheus config 
 if [ ! -f "./prometheus.yml" ]; then
     echo "Creating default prometheus.yml..."
     cat <<EOF > ./prometheus.yml
@@ -39,7 +35,7 @@ scrape_configs:
 EOF
 fi
 
-# Create Grafana config only if it doesn't exist.
+# Create Grafana config 
 if [ ! -f "./grafana-datasources.yml" ]; then
     echo "Creating default grafana-datasources.yml..."
     cat <<EOF > ./grafana-datasources.yml
@@ -53,7 +49,7 @@ datasources:
 EOF
 fi
 
-# Start services using Docker Compose in detached mode.
+# Start services
 docker-compose up -d
 
 echo "--- Infrastructure is running ---"

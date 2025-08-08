@@ -1,6 +1,5 @@
 import sys
 from pathlib import Path
-# # Adding project root to Python path
 sys.path.append(str(Path(__file__).parent.parent))
 from src.data_pipeline import DataPipeline
 import joblib

@@ -10,21 +10,12 @@ from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
 from db.schemas import PredictionRequest, RetrainingRequest, NewDataSample
 from src.monitoring import MonitoringService, REQUEST_COUNT, REQUEST_LATENCY
 
-# Load environment variables from a .env file in your project root
-# GITHUB_TOKEN="your_github_token"
-# GITHUB_REPO="your_github_username/your_repo_name"
+# Load environment variables from a .env file
 load_dotenv()
-
 
 # --- Helper Function for GitHub Actions ---
 def trigger_github_action_workflow():
-    """
-    Triggers a GitHub Actions workflow by sending a repository dispatch event.
-    Reads configuration from environment variables (loaded from .env file).
-
-    Returns:
-        tuple: A tuple containing (bool: success, str: message).
-    """
+    
     token = os.getenv("GITHUB_TOKEN")
     repo = os.getenv("GITHUB_REPO")
     workflow_file = os.getenv("GITHUB_WORKFLOW_FILE", "ci-cd.yml")

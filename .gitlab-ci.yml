@@ -76,7 +76,6 @@ deploy:
   dependencies:
     - build-and-push-docker
   script:
-    # Save the SSH deploy key as file; make sure you have set DEPLOY_SSH_KEY as a protected file variable
     - apk add --no-cache openssh-client openssl git 
     - echo "$DEPLOY_SSH_KEY" > id_rsa
     - chmod 600 id_rsa

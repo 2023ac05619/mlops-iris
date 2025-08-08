@@ -3,10 +3,7 @@ import json
 import tempfile
 import os
 from pathlib import Path
-
-# Setup test environment
 os.environ['TESTING'] = 'true'
-
 from api import create_app
 from db.database import DatabaseManager
 from src.inference_service import InferenceService
@@ -19,7 +16,7 @@ def setup_test_pipeline():
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_path = Path(temp_dir)
         
-        # Override config paths for testing
+        # Override config paths
         import config
         config.MODELS_DIR = temp_path / "models"
         config.LOGS_DIR = temp_path / "logs"

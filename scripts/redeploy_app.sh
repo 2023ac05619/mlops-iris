@@ -16,14 +16,12 @@ fi
 
 # --- Configuration ---
 IMAGE_TAG=${1}
-# Check if an image tag was provided.
 if [ -z "${IMAGE_TAG}" ]; then
     echo "Error: No image tag provided."
     echo "Usage: ./scripts/deploy.sh <tag>"
     exit 1
 fi
 
-# Check if Docker Hub username is set
 if [ -z "${DOCKERHUB_USERNAME}" ]; then
     echo "Error: DOCKERHUB_USERNAME is not set. Please add it to your .env file or export it."
     exit 1
