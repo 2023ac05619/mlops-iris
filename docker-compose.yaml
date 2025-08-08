@@ -1,7 +1,7 @@
 version: '3.8'
 services:
   app:
-    image: 2023ac05619/mlops-iris-classifier:${IMAGE_TAG:-latest}
+    image: 2023ac05619/mlops-iris:${IMAGE_TAG:-latest}
     container_name: app
     restart: always
     # build:
@@ -11,7 +11,7 @@ services:
       - DATABASE_URL=postgresql://user:password@db/iris_db
       - MLFLOW_TRACKING_URI=http://mlflow:5000
     ports:
-      - "8000:8000"
+      - "5001:5001"
     volumes:
       - ./mlruns:/app/mlruns
     depends_on:
