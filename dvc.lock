@@ -8,14 +8,14 @@ stages:
       md5: 117a26fae26005f683f42fea7481f0a5
       size: 1504
     outs:
-    - path: data/iris.csv
+    - path: data/iris_full.csv
       hash: md5
       md5: 4d301abed5efe50eccda350cde38e0eb
       size: 2777
   split_data:
     cmd: python src/data_pipeline.py split
     deps:
-    - path: data/iris.csv
+    - path: data/iris_full.csv
       hash: md5
       md5: 4d301abed5efe50eccda350cde38e0eb
       size: 2777
@@ -32,3 +32,24 @@ stages:
       hash: md5
       md5: 47fd89ce6c52daa555a94670836c67a2
       size: 2237
+  preprocess:
+    cmd: python src/data_pipeline.py
+    deps:
+    - path: data/iris_full.csv
+      hash: md5
+      md5: 4d301abed5efe50eccda350cde38e0eb
+      size: 2777
+    - path: src/data_pipeline.py
+      hash: md5
+      md5: 7ad22b6f706faf53447bb3020bd6950b
+      size: 2013
+    params:
+      params.yaml:
+        RANDOM_STATE: 42
+        TEST_SIZE: 0.2
+    outs:
+    - path: data/processed
+      hash: md5
+      md5: 345b4556d03fdec64780ed62f584a17c.dir
+      size: 2893
+      nfiles: 2

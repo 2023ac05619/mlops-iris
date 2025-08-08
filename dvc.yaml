@@ -1,17 +1,22 @@
 stages:
-  load_data:
-    cmd: python src/data_pipeline.py load
+  preprocess:
+    cmd: python src/data_pipeline.py
     deps:
-    - src/data_pipeline.py
+      - data/iris_full.csv
+      - src/data_pipeline.py
+    params:
+      - TEST_SIZE
+      - RANDOM_STATE
     outs:
-    - data/iris.csv
+      - data/processed
 
-  split_data:
-    cmd: python src/data_pipeline.py split
+  train:
+    cmd: python src/model_pipeline.py
     deps:
-    - data/iris.csv
-    - src/data_pipeline.py
+      - data/processed
+      - src/model_pipeline.py
+    params:
+      - training
+      - RANDOM_STATE
     outs:
-    - data/train.csv
-    - data/test.csv
-
+      - models

@@ -76,7 +76,8 @@ data/processed/
 
 # DVC
 .dvc/cache
-data/iris.csv
+.dvc/config
+data/iris_full.csv
 /data/processed/train.csv
 /data/processed/test.csv
 

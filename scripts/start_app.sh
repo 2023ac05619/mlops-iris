@@ -6,7 +6,7 @@ set -e
 # --- Load Environment Variables ---
 ENV_FILE="$(dirname "$0")/../.env"
 
-# Use a more robust method to load environment variables that handles spaces and special characters.
+# Use a more robust method to load environment variables.
 if [ -f "$ENV_FILE" ]; then
     echo "Loading environment variables from .env file..."
     set -a
@@ -18,24 +18,16 @@ fi
 
 echo "--- Ensuring a clean state by stopping existing services ---"
 # Stop and remove containers, networks, and volumes created by 'up' in previous runs.
-# This prevents potential conflicts and errors like 'ContainerConfig' mismatch.
 docker-compose down --remove-orphans
 
 echo "--- Starting MLOps Infrastructure ---"
 
-# Create necessary directories if they don't exist. The -p flag prevents errors if they already exist.
-mkdir -p ./minio_data
+# Create necessary directories if they don't exist.
 mkdir -p ./config
-mkdir -p ./gitlab/config
-mkdir -p ./gitlab/logs
-mkdir -p ./gitlab/data
-
 
 # Create Prometheus config only if it doesn't exist to avoid overwriting user changes.
 if [ ! -f "./config/prometheus.yml" ]; then
     echo "Creating default prometheus.yml..."
-    # Note: In a real scenario, you'd get the app's IP dynamically.
-    # For now, we assume the app will be on the same Docker network.
     cat <<EOF > ./config/prometheus.yml
 global:
   scrape_interval: 15s
@@ -43,7 +35,7 @@ global:
 scrape_configs:
   - job_name: 'iris-app'
     static_configs:
-      - targets: ['iris-app:8000']
+      - targets: ['app:8000'] # Assumes service name 'app' in docker-compose
 EOF
 fi
 
@@ -62,11 +54,8 @@ EOF
 fi
 
 # Start services using Docker Compose in detached mode.
-# This command is idempotent: it only creates or updates containers that have changed.
 docker-compose up -d
 
 echo "--- Infrastructure is running ---"
-echo "GitLab: http://localhost (The first run might take a few minutes to initialize)"
-echo "MinIO UI: http://localhost:${MINIO_UI_PORT:-9001}"
 echo "Prometheus: http://localhost:9090"
 echo "Grafana: http://localhost:3000"

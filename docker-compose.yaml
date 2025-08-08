@@ -1,68 +1,88 @@
 version: '3.8'
-
 services:
-  gitlab:
-    image: gitlab/gitlab-ee:16.7.0-ee.0 # Using a specific version for stability
-    container_name: gitlab
-    hostname: 'gitlab.example.com'
+  app:
+    image: 2023ac05619/mlops-iris-classifier:${IMAGE_TAG:-latest}
+    container_name: app
     restart: always
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
     environment:
-      GITLAB_OMNIBUS_CONFIG: |
-        external_url 'http://gitlab.example.com:80'
-        gitlab_rails['gitlab_shell_ssh_port'] = 2424
+      - DATABASE_URL=postgresql://user:password@db/iris_db
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
     ports:
-      - "80:80"
-      - "443:443"
-      - "2424:22"
+      - "8000:8000"
     volumes:
-      - ./gitlab/config:/etc/gitlab
-      - ./gitlab/logs:/var/log/gitlab
-      - ./gitlab/data:/var/opt/gitlab
-    environment:
-      GITLAB_OMNIBUS_CONFIG: "external_url 'http://localhost'" # Changed to localhost for easy access
-    shm_size: '256m'
+      - ./mlruns:/app/mlruns
+    depends_on:
+      - db
+      - mlflow
     networks:
       - mlops-net
 
-  minio:
-    image: minio/minio:RELEASE.2024-10-02T17-50-41Z
-    container_name: minio
-    ports:
-      - "${MINIO_API_PORT:-9000}:9000"  # For API access
-      - "${MINIO_UI_PORT:-9001}:9001"  # For the web UI
-    volumes:
-      - ./minio_data:/data
+  db:
+    image: postgres:13
+    container_name: postgres
+    restart: always
     environment:
-      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
-      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin}
-    command: server /data --console-address ":9001"
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=iris_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    networks:
+      - mlops-net
+
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:latest
+    container_name: mlflow
+    restart: always
+    command: >
+      mlflow server
+      --backend-store-uri postgresql://user:password@db/iris_db
+      --default-artifact-root /mlruns
+      --host 0.0.0.0
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./mlruns:/mlruns
+    depends_on:
+      - db
     networks:
       - mlops-net
 
   prometheus:
     image: prom/prometheus:v2.47.0
     container_name: prometheus
+    restart: always
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
     ports:
       - "9090:9090"
     volumes:
       - ./config/prometheus.yml:/etc/prometheus/prometheus.yml
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
     networks:
       - mlops-net
 
   grafana:
     image: grafana/grafana:10.1.2
     container_name: grafana
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./config/grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml
+    restart: always
     environment:
       - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./grafana-dashboard.json:/etc/grafana/provisioning/dashboards/dashboard.json
+      - ./config/grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml
     networks:
       - mlops-net
+
+volumes:
+  postgres_data:
 
 networks:
   mlops-net:

@@ -1,76 +1,35 @@
 import uvicorn
-import joblib
-import json
-from src.data_pipeline import load_raw_data, split_data
-from src.model_pipeline import train_models
-from prometheus_fastapi_instrumentator import Instrumentator
-from prometheus_client import Gauge
-import os
-import sys
-from pathlib import Path
+from contextlib import asynccontextmanager
+from fastapi import FastAPI
 
-# Adding project root to Python path
-sys.path.append(str(Path(__file__).parent))
+from app.routes import router as api_router
+from src.inference_service import get_inference_service
+from src.monitoring import setup_system_monitoring, start_metrics_exporter
+from db.database import initialize_db
+from config import API_HOST, API_PORT
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Handles application startup and shutdown events."""
+    initialize_db()
+    get_inference_service()
+    start_metrics_exporter()
+    print(f"API running on http://{API_HOST}:{API_PORT}")
+    yield
+    
 
-# Add root to path
-ROOT_DIR_APP = Path(__file__).parent.parent
-sys.path.append(str(ROOT_DIR_APP))
-
-from app.api import app
-from config.config import MODELS_DIR, METADATA_FILE, SCALER_FILE, API_HOST, API_PORT
-
-
-
-# --- Prometheus Metrics ---
-# This gauge will track predictions for each model
-SYSTEM_METRICS = Gauge(
-    "system_metrics",
-    "Predictions per model",
-    ["model_name", "predicted_class"]
+app = FastAPI(
+    title="MLOps Iris Classifier API",
+    description="API for Iris classification with DB logging and monitoring.",
+    version="1.1.0",
+    lifespan=lifespan
 )
 
-@app.on_event("startup")
-def load_artifacts():
-    """Load models, scaler, and metadata on application startup."""
-    print("--- Loading application artifacts ---")
-    try:
-        with open(METADATA_FILE, "r") as f:
-            app.state.metadata = json.load(f)
+# Setup system monitoring (request latency, etc.)
+setup_system_monitoring(app)
 
-        app.state.scaler = joblib.load(SCALER_FILE)
-
-        app.state.models = {}
-        for name, details in app.state.metadata["models"].items():
-            model_path = MODELS_DIR / f"{name}.pkl"
-            app.state.models[name] = joblib.load(model_path)
-            print(f"Successfully loaded model: {name}")
-
-        # Instrument the app with Prometheus metrics
-        Instrumentator().instrument(app).expose(app)
-        print("--- Artifacts loaded successfully ---")
-
-    except FileNotFoundError as e:
-        print(f"ERROR: Could not load artifacts. File not found: {e}")
-        print("Please run the training pipeline first.")
-        # In a real app, you might want to exit or handle this more gracefully
-    except Exception as e:
-        print(f"An unexpected error occurred during startup: {e}")
-
+# Include the API router
+app.include_router(api_router)
 
 if __name__ == "__main__":
-    
-    try:
-        # Run complete pipeline
-        load_raw_data()
-        split_data()
-        train_models()
-        
-    except Exception as e:
-        print(f"[ERROR] Pipeline failed: {e}")
-        raise
-
-    uvicorn.run(app, host=API_HOST, port=API_PORT)
-
-
-
+    uvicorn.run("main:app", host=API_HOST, port=API_PORT, reload=True)
