@@ -70,7 +70,7 @@ Thumbs.db
 # Project specific
 logs/
 mlruns/
-data/processed/
+data/processed_data.pkl
 *.log
 *.pid
 
