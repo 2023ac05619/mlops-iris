@@ -68,7 +68,7 @@ ehthumbs.db
 Thumbs.db
 
 # Project specific
-logs/
+# logs/
 mlruns/
 data/processed_data.pkl
 *.log

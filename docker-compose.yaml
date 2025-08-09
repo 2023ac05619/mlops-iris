@@ -11,7 +11,7 @@ services:
       - "5001:5001"
     env_file:
       - .env
-    volumes: 
+    volumes:
       - .:/app
     #  - ./env:/app/.env
     networks:

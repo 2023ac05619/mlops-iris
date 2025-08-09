@@ -15,15 +15,16 @@ class DatabaseManager:
         self.db_path = DB_PATH
         self.conn = None
 
-    def connect(self):
-        try:
-            self.conn = sqlite3.connect(self.db_path)
-        except sqlite3.Error as e:
-            print(f"[ERROR] Could not connect to database: {e}")
-            self.conn = None
+    # def connect(self):
+    #     try:
+    #         self.conn = sqlite3.connect(self.db_path)
+    #     except sqlite3.Error as e:
+    #         print(f"[ERROR] Could not connect to database: {e}")
+    #         self.conn = None
             
     def init_db(self):
         with sqlite3.connect(self.db_path) as conn:
+            self.conn = conn
             cursor = conn.cursor()
             
             # Predictions table

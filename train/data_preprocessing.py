@@ -14,7 +14,7 @@ def preprocess():
     
     try:      
         db_manager = DatabaseManager()
-        db_manager.connect()
+        db_manager.init_db()
         pipeline = DataPipeline(db_manager)
         
         processed_data = pipeline.load_and_preprocess()

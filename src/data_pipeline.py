@@ -25,7 +25,7 @@ class DataPipeline:
         self.target_names = list(iris.target_names)
         return iris.data, iris.target
     
-    def _load_new_data_from_db(self):
+    def load_new_data_from_db(self):
         if not self.db_manager:
             # print("[INFO] Skipping data load from database.")
             return np.array([]).reshape(0, 4), np.array([])
@@ -61,7 +61,7 @@ class DataPipeline:
     def load_and_preprocess(self):
         print("[INFO] Loading Iris dataset...")
         x_file, y_file = self.load_iris_dataset() # Fron CSV
-        x_db, y_db = self._load_new_data_from_db() # From Sqlite DB
+        x_db, y_db = self.load_new_data_from_db() # From Sqlite DB
 
         X = np.concatenate([x_file, x_db]) if x_db.size > 0 else x_file
         y = np.concatenate([y_file, y_db]) if y_db.size > 0 else y_file

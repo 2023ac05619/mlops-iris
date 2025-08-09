@@ -13,6 +13,7 @@ COPY ./db /app/db
 COPY ./models /app/models
 COPY ./src /app/src
 COPY ./train /app/train
+COPY ./logs /app/logs
 COPY ./config.py /app/config.py
 
 EXPOSE 5001
