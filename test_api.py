@@ -43,6 +43,7 @@ def client(setup_test_pipeline):
     
     # Initialize services
     db_manager = DatabaseManager()
+    
     inference_service = InferenceService()
     
     db_manager.init_db()
