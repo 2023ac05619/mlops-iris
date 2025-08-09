@@ -117,14 +117,14 @@ def register_routes(app):
         try:
             _, _, monitoring = get_services()
 
-            # 1. Validate and store the new data
+            # Validate and store the new data
             sample = NewDataSample(**request.get_json())
             success, message = monitoring.log_and_store_data(sample.features, sample.target)
 
             if not success:
                 return jsonify({"error": message}), 500
-
-            # 2. If data was stored, trigger the GitHub Action workflow
+            
+            # Trigger the GitHub Action workflow
             workflow_success, workflow_message = trigger_github_action_workflow()
 
             if workflow_success:

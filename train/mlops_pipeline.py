@@ -20,7 +20,8 @@ class MLOpsPipeline:
     
     def __init__(self):        
         self.db_manager = DatabaseManager()
-        self.data_pipeline = DataPipeline(self.db_manager)
+        # self.data_pipeline = DataPipeline(self.db_manager)
+        self.data_pipeline = DataPipeline()
         self.model_pipeline = ModelPipeline()
         self.inference_service = InferenceService()
         self.mlflow_manager = MLflowManager()

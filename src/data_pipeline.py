@@ -13,23 +13,18 @@ DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 class DataPipeline:
     
-    def __init__(self, db_manager: DatabaseManager):
+    def __init__(self):
         self.scaler = StandardScaler()
         self.feature_names = None
         self.target_names = None
-        self.db_manager = db_manager
-    
-    def load_iris_dataset(self):
-        iris = load_iris()
-        self.feature_names = iris.feature_names
-        self.target_names = list(iris.target_names)
-        return iris.data, iris.target
+        self.db_manager = DatabaseManager()
     
     def load_new_data_from_db(self):
         if not self.db_manager:
-            # print("[INFO] Skipping data load from database.")
+            print("[INFO] Skipping data load from database.")
             return np.array([]).reshape(0, 4), np.array([])
         new_records = self.db_manager.fetch_all_new_data()
+        self.db_manager.mark_data_as_used()
 
         if not new_records:
             # print("[INFO] No new data found in the database.")
@@ -41,12 +36,28 @@ class DataPipeline:
 
         return np.array(features), np.array(targets)
     
+    def load_iris_dataset(self):
+        iris = load_iris()
+        self.feature_names = iris.feature_names
+        self.target_names = list(iris.target_names)   
+ 
+        return iris.data, iris.target        
+    
     def save_raw_data(self, X, y):
         df = pd.DataFrame(X, columns=self.feature_names)
         df['target'] = y
         df['target_name'] = [self.target_names[i] for i in y]
         df.to_csv(DATA_DIR / "iris_full.csv", index=False)
         print(f"[INFO] Raw data saved to {DATA_DIR / 'iris_full.csv'}")
+    
+    def consolidate_data(self, X, y):
+        x_file, y_file = self.load_iris_dataset() # Fron CSV        
+        x_db, y_db = self.load_new_data_from_db() # From Sqlite DB
+
+        X = np.concatenate([x_file, x_db]) if x_db.size > 0 else x_file
+        y = np.concatenate([y_file, y_db]) if y_db.size > 0 else y_file
+        
+        self.save_raw_data(X, y)
         
     def split_and_scale_data(self, X, y):
         X_train, X_test, y_train, y_test = train_test_split(
@@ -60,11 +71,7 @@ class DataPipeline:
         
     def load_and_preprocess(self):
         print("[INFO] Loading Iris dataset...")
-        x_file, y_file = self.load_iris_dataset() # Fron CSV
-        x_db, y_db = self.load_new_data_from_db() # From Sqlite DB
-
-        X = np.concatenate([x_file, x_db]) if x_db.size > 0 else x_file
-        y = np.concatenate([y_file, y_db]) if y_db.size > 0 else y_file
+        X, y = self.load_iris_dataset()
 
         print("[INFO] Saving raw data...")
         self.save_raw_data(X, y)

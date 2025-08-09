@@ -2,6 +2,7 @@ import threading
 from datetime import datetime
 from prometheus_client import Counter, Histogram, Gauge, generate_latest, CONTENT_TYPE_LATEST
 from db.database import DatabaseManager
+from src.data_pipeline import DataPipeline
 # from config import RETRAIN_THRESHOLD
 RETRAIN_THRESHOLD = 100  # Example threshold for retraining
 
@@ -34,7 +35,8 @@ class MonitoringService:
                 from src.model_pipeline import ModelPipeline
                 
                 # Run retraining pipeline
-                data_pipeline = DataPipeline(self.db_manager)
+                # data_pipeline = DataPipeline(self.db_manager)
+                data_pipeline = DataPipeline()
                 model_pipeline = ModelPipeline()
                 
                 data = data_pipeline.load_and_preprocess()
@@ -56,13 +58,14 @@ class MonitoringService:
         try:
             timestamp = datetime.now().isoformat()
             self.db_manager.store_new_data(timestamp, features, target)
-            
-            if self.check_retrain_condition():
-                self.trigger_retraining()
-                message = "Training data added. Retraining triggered!"
-            else:
-                message = "Training data added successfully."
-                
+            data_pipeline = DataPipeline() 
+            data_pipeline.consolidate_data(features, target) 
+                       
+            message = "Training data added successfully."            
+            # if self.check_retrain_condition():
+            #     self.trigger_retraining()
+            #     message = "Training data added. Retraining triggered!"
+    
             return True, message
             
         except Exception as e:
