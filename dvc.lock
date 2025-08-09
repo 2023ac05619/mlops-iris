@@ -5,12 +5,12 @@ stages:
     deps:
     - path: data/iris_full.csv
       hash: md5
-      md5: 9b81a5b2beab90b5e381dfb33627d536
-      size: 4189
+      md5: 0c3c078df2ecd4c8da59951772731e84
+      size: 4589
     - path: train/data_preprocessing.py
       hash: md5
-      md5: 66665c66368dfcdc3c393041c5380cdb
-      size: 804
+      md5: 174004788717adc36e71d5c379dd9255
+      size: 933
     params:
       params.yaml:
         RANDOM_STATE: 42
@@ -18,15 +18,15 @@ stages:
     outs:
     - path: data/processed_data.pkl
       hash: md5
-      md5: 1f8836f3d7fe1e5ee0e92cc629ae1530
-      size: 7319
+      md5: 2baeace00c123efcd7c2fe3a09e69783
+      size: 7959
   train:
     cmd: python train/model_training.py
     deps:
     - path: data/processed_data.pkl
       hash: md5
-      md5: 1f8836f3d7fe1e5ee0e92cc629ae1530
-      size: 7319
+      md5: 2baeace00c123efcd7c2fe3a09e69783
+      size: 7959
     - path: train/model_training.py
       hash: md5
       md5: 959e406cfb04404066094ce7922a311c
@@ -46,6 +46,6 @@ stages:
     outs:
     - path: models
       hash: md5
-      md5: e7ccd0366a297a1518edf6ae30e9a790.dir
+      md5: e3569aaba617d1b91f4a2aecb90fef21.dir
       size: 2359
       nfiles: 3

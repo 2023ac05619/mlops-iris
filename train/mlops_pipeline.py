@@ -11,18 +11,19 @@ from db.database import DatabaseManager
 from api import create_app
 # from config import MLRUNS_DIR
 from pathlib import Path
+
 ROOT_DIR = Path(__file__).parent.parent
 MLRUNS_DIR = ROOT_DIR / "mlruns"
 MLRUNS_DIR.mkdir(parents=True, exist_ok=True)
 
 class MLOpsPipeline:
     
-    def __init__(self):
-        self.data_pipeline = DataPipeline()
+    def __init__(self):        
+        self.db_manager = DatabaseManager()
+        self.data_pipeline = DataPipeline(self.db_manager)
         self.model_pipeline = ModelPipeline()
         self.inference_service = InferenceService()
         self.mlflow_manager = MLflowManager()
-        self.db_manager = DatabaseManager()
         
     def run_data_pipeline(self):
         print("\n[INFO] Running data pipeline...")

@@ -34,7 +34,7 @@ class MonitoringService:
                 from src.model_pipeline import ModelPipeline
                 
                 # Run retraining pipeline
-                data_pipeline = DataPipeline()
+                data_pipeline = DataPipeline(self.db_manager)
                 model_pipeline = ModelPipeline()
                 
                 data = data_pipeline.load_and_preprocess()

@@ -13,7 +13,15 @@ class DatabaseManager:
     
     def __init__(self):
         self.db_path = DB_PATH
-        
+        self.conn = None
+
+    def connect(self):
+        try:
+            self.conn = sqlite3.connect(self.db_path)
+        except sqlite3.Error as e:
+            print(f"[ERROR] Could not connect to database: {e}")
+            self.conn = None
+            
     def init_db(self):
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
@@ -75,7 +83,13 @@ class DatabaseManager:
         except sqlite3.Error as e:
             print(f"[ERROR] Database error counting samples: {e}")
             return 0
-            
+    
+    def fetch_all_new_data(self):
+        cursor = self.conn.cursor()
+        cursor.execute("SELECT timestamp, features, target FROM new_training_data WHERE used_for_training = FALSE")
+        records = cursor.fetchall()
+        return records
+    
     def mark_data_as_used(self):
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
